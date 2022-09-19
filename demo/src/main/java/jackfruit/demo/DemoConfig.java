@@ -1,7 +1,7 @@
 package jackfruit.demo;
 
 import jackfruit.annotations.Comment;
-import jackfruit.annotations.ConfigParams;
+import jackfruit.annotations.Jackfruit;
 import jackfruit.annotations.DefaultValue;
 import jackfruit.annotations.Key;
 import jackfruit.annotations.ParserClass;
@@ -45,7 +45,7 @@ import jackfruit.annotations.ParserClass;
  *
  */
 
-@ConfigParams(prefix = "prefix")
+@Jackfruit(prefix = "prefix")
 public interface DemoConfig {
 
   // default key is field name
@@ -60,7 +60,7 @@ public interface DemoConfig {
   @DefaultValue("Default String")
   public String StringMethod();
 
-  // parser creates an object from a string
+  @Comment("This string is serialized into an object")
   @DefaultValue("serialized string")
   @ParserClass(SomeRandomClassParser.class)
   public SomeRandomClass randomClass();

@@ -41,7 +41,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import jackfruit.annotations.Comment;
-import jackfruit.annotations.ConfigParams;
+import jackfruit.annotations.Jackfruit;
 import jackfruit.annotations.DefaultValue;
 import jackfruit.annotations.Key;
 import jackfruit.annotations.ParserClass;
@@ -53,7 +53,7 @@ import jackfruit.annotations.ParserClass;
  *
  */
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
-@SupportedAnnotationTypes("jackfruit.annotations.ConfigParams")
+@SupportedAnnotationTypes("jackfruit.annotations.Jackfruit")
 @AutoService(Processor.class)
 public class ConfigProcessor extends AbstractProcessor {
 
@@ -68,8 +68,8 @@ public class ConfigProcessor extends AbstractProcessor {
 
     Messager messager = processingEnv.getMessager();
 
-    List<Element> annotatedInterfaces = roundEnv.getElementsAnnotatedWith(ConfigParams.class)
-        .stream().filter(e -> e.getKind() == ElementKind.INTERFACE).collect(Collectors.toList());
+    List<Element> annotatedInterfaces = roundEnv.getElementsAnnotatedWith(Jackfruit.class).stream()
+        .filter(e -> e.getKind() == ElementKind.INTERFACE).collect(Collectors.toList());
 
     for (Element element : annotatedInterfaces) {
 
@@ -77,8 +77,7 @@ public class ConfigProcessor extends AbstractProcessor {
         if (element instanceof TypeElement) {
           TypeElement annotatedType = (TypeElement) element;
 
-          ConfigParams configParams =
-              (ConfigParams) annotatedType.getAnnotation(ConfigParams.class);
+          Jackfruit configParams = (Jackfruit) annotatedType.getAnnotation(Jackfruit.class);
           String prefix = configParams.prefix();
           if (prefix.length() > 0)
             prefix += ".";
@@ -87,8 +86,8 @@ public class ConfigProcessor extends AbstractProcessor {
           TypeVariableName tvn = TypeVariableName.get(annotatedType.getSimpleName().toString());
 
           // This is the generic class; e.g. "ConfigFactory<TestConfig>"
-          ParameterizedTypeName ptn =
-              ParameterizedTypeName.get(ClassName.get(jackfruit.processor.ConfigFactory.class), tvn);
+          ParameterizedTypeName ptn = ParameterizedTypeName
+              .get(ClassName.get(jackfruit.processor.ConfigFactory.class), tvn);
 
           String factoryName = String.format("%sFactory", annotatedType.getSimpleName());
 
@@ -209,27 +208,43 @@ public class ConfigProcessor extends AbstractProcessor {
   private MethodSpec buildToConfig(TypeVariableName tvn, Method m,
       Map<ExecutableElement, AnnotationBundle> annotationsMap, String prefix) {
     ParameterSpec ps = ParameterSpec.builder(tvn, "t").build();
+    ParameterSpec layout = ParameterSpec.builder(TypeVariableName.get(
+        org.apache.commons.configuration2.PropertiesConfigurationLayout.class.getCanonicalName()),
+        "layout").build();
     MethodSpec.Builder methodBuilder =
         MethodSpec.methodBuilder(m.getName()).addAnnotation(Override.class)
-            .addModifiers(Modifier.PUBLIC).returns(m.getGenericReturnType()).addParameter(ps);
+            .addModifiers(Modifier.PUBLIC).returns(m.getGenericReturnType());
+    methodBuilder.addParameter(ps);
+    methodBuilder.addParameter(layout);
 
     methodBuilder.addStatement("$T config = new $T()",
         org.apache.commons.configuration2.PropertiesConfiguration.class,
         org.apache.commons.configuration2.PropertiesConfiguration.class);
+    methodBuilder.addStatement("config.setLayout($N)", layout);
 
+    boolean needBlank = true;
     for (ExecutableElement method : annotationsMap.keySet()) {
       AnnotationBundle ab = annotationsMap.get(method);
+      String key = prefix + ab.key();
+      if (needBlank) {
+        methodBuilder.addStatement(String.format("$N.setBlancLinesBefore(\"%s\", 1)", key), layout);
+        needBlank = false;
+      }
       if (ab.parserClass().isPresent()) {
         TypeMirror parser = ab.parserClass().get();
         String parserName = method.getSimpleName() + "parser";
         methodBuilder.addStatement("$T " + parserName + " = new $T()", parser, parser);
         methodBuilder.addStatement(String.format("config.setProperty(\"%s\", %s.toString($N.%s()))",
-            prefix + ab.key(), parserName, method.getSimpleName()), ps);
+            key, parserName, method.getSimpleName()), ps);
       } else {
-        methodBuilder.addStatement(String.format("config.setProperty(\"%s\", t.%s())",
-            prefix + ab.key(), method.getSimpleName()));
+        methodBuilder.addStatement(
+            String.format("config.setProperty(\"%s\", t.%s())", key, method.getSimpleName()));
       }
+      if (ab.comment().length() > 0)
+        methodBuilder.addStatement(
+            String.format("$N.setComment(\"%s\", \"%s\")", key, ab.comment()), layout);
     }
+
 
     methodBuilder.addCode("return config;");
 
