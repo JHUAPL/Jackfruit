@@ -1,4 +1,4 @@
-package srncfg.demo;
+package jackfruit.demo;
 
 public class SomeRandomClass {
 

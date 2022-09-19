@@ -1,9 +1,8 @@
-package srncfg.demo;
+package jackfruit.demo;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import srncfg.annotations.Parser;
+import jackfruit.annotations.Parser;
 
 public class SomeRandomClassParser implements Parser<SomeRandomClass> {
 

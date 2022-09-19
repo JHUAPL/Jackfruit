@@ -1,10 +1,10 @@
-package srncfg.demo;
+package jackfruit.demo;
 
-import srncfg.annotations.Comment;
-import srncfg.annotations.ConfigParams;
-import srncfg.annotations.DefaultValue;
-import srncfg.annotations.Key;
-import srncfg.annotations.ParserClass;
+import jackfruit.annotations.Comment;
+import jackfruit.annotations.ConfigParams;
+import jackfruit.annotations.DefaultValue;
+import jackfruit.annotations.Key;
+import jackfruit.annotations.ParserClass;
 
 /**
  * &#x0040;Configurable on interface

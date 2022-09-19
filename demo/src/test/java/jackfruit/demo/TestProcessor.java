@@ -1,4 +1,4 @@
-package srncfg.demo;
+package jackfruit.demo;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -14,7 +14,7 @@ import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import org.junit.Test;
 import crucible.crust.logging.Log4j2Configurator;
-import srncfg.processor.ConfigProcessor;
+import jackfruit.processor.ConfigProcessor;
 
 /**
  * From <a href=

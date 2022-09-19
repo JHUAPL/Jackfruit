@@ -1,4 +1,4 @@
-package srncfg.processor;
+package jackfruit.processor;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,13 +50,11 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
-import srncfg.annotations.AnnotationBundle;
-import srncfg.annotations.Comment;
-import srncfg.annotations.ConfigParams;
-import srncfg.annotations.DefaultValue;
-import srncfg.annotations.ImmutableAnnotationBundle;
-import srncfg.annotations.Key;
-import srncfg.annotations.ParserClass;
+import jackfruit.annotations.Comment;
+import jackfruit.annotations.ConfigParams;
+import jackfruit.annotations.DefaultValue;
+import jackfruit.annotations.Key;
+import jackfruit.annotations.ParserClass;
 
 /**
  * https://www.javacodegeeks.com/2015/09/java-annotation-processors.html
@@ -65,7 +63,7 @@ import srncfg.annotations.ParserClass;
  *
  */
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
-@SupportedAnnotationTypes("srncfg.annotations.ConfigParams")
+@SupportedAnnotationTypes("jackfruit.annotations.ConfigParams")
 @AutoService(Processor.class)
 public class ConfigProcessor extends AbstractProcessor {
 
@@ -100,7 +98,7 @@ public class ConfigProcessor extends AbstractProcessor {
 
           // This is the generic class; e.g. "ConfigFactory<TestConfig>"
           ParameterizedTypeName ptn =
-              ParameterizedTypeName.get(ClassName.get(srncfg.processor.ConfigFactory.class), tvn);
+              ParameterizedTypeName.get(ClassName.get(jackfruit.processor.ConfigFactory.class), tvn);
 
           String factoryName = String.format("%sFactory", annotatedType.getSimpleName());
 

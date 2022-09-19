@@ -1,4 +1,4 @@
-package srncfg.processor;
+package jackfruit.processor;
 
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.PropertiesConfiguration;

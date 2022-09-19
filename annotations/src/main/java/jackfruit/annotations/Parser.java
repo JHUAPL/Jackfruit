@@ -1,4 +1,4 @@
-package srncfg.annotations;
+package jackfruit.annotations;
 
 public interface Parser<T> {
   public T fromString(String s);

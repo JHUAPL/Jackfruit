@@ -1,4 +1,4 @@
-package srncfg.annotations;
+package jackfruit.processor;
 
 import java.util.Optional;
 import javax.lang.model.type.TypeMirror;
