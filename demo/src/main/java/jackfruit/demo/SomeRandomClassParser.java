@@ -1,22 +1,17 @@
 package jackfruit.demo;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import jackfruit.annotations.Parser;
 
 public class SomeRandomClassParser implements Parser<SomeRandomClass> {
 
-  public static Logger logger = LogManager.getLogger();
-
   @Override
   public SomeRandomClass fromString(String s) {
-    logger.info("deserialize SomeRandomClass from " + s);
-    return new SomeRandomClass();
+    return new SomeRandomClass(s);
   }
 
   @Override
   public String toString(SomeRandomClass src) {
-    return "";
+    return src.getInternalString();
   }
 
 

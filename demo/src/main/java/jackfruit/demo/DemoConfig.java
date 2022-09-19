@@ -46,7 +46,7 @@ import jackfruit.annotations.ParserClass;
  */
 
 @ConfigParams(prefix = "prefix")
-public interface ConfigTemplate {
+public interface DemoConfig {
 
   // default key is field name
   @Key("key")
