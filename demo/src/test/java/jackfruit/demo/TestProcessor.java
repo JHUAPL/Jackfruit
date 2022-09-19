@@ -36,7 +36,7 @@ public class TestProcessor {
     System.out.println(System.getProperty("java.class.path"));
     */
     
-    boolean ignore = false;
+    boolean ignore = true;
     if (!ignore) {
       Log4j2Configurator lc = Log4j2Configurator.getInstance();
       lc.setPattern("%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%c{1}:%L] %msg%n%throwable}");
