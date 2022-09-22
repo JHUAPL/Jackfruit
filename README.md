@@ -55,7 +55,6 @@ public interface DemoConfig {
 This corresponds to this Apache Configuration file:
 ```
 # field comment
-# field comment
 prefix.key = 0
 prefix.doubleMethod = 0.0
 prefix.StringMethod = Default String
@@ -107,3 +106,37 @@ The annotation processor generates a class called DemoConfigFactory.  An example
     // get one of the config object's properties
     System.out.printf("config.StringMethod() = %s\n", template.StringMethod());
 ```
+
+## Supported Annotations
+
+The `@Jackfruit` annotation goes on the interface.  The remaining annotations are for use on the interface methods.
+
+### Jackfruit
+This annotation goes on the interface to signify that it should be run through the annotation processor.  There is an optional "prefix" argument that can be used to add a prefix to all of the configuration keys created by the processor.
+
+### Comment
+
+The `@Comment` annotation specifies the comment that appears in the configuration file above the parameter itself.
+
+### DefaultValue
+
+The `@DefaultValue` annotation is a String used to initialize the parameter.  This is a required annotation.  Strings and primitives (and their corresponding wrapper types) are read natively.  Other objects will need to use the `@ParserClass` annotation to specify a class which implements the `jackfruit.annotations.Parser` interface to convert the object to and from a String.
+
+### Key
+
+The `@Key` annotation can be used to specify the name for the configuration key.  The default is to use the name of the method.
+
+### ParserClass
+
+The `@ParserClass` annotation specifies a class which implements the `jackfruit.annotations.Parser` interface to convert an object to and from a String.  The `Parser` interface implements two methods:
+
+```
+public interface Parser<T> {
+  public T fromString(String s);
+
+  public String toString(T t);
+}
+```
+
+
+

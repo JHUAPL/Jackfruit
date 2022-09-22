@@ -5,6 +5,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Use this annotation to signify that it should be run through the annotation processor. There is
+ * an optional "prefix" argument that can be used to add a prefix to all of the configuration keys
+ * created by the processor.
+ * <p>
+ * For example:
+ * 
+ * &#x0040;Jackfruit(prefix = "myPrefix")
+ * 
+ * @author nairah1
+ *
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Jackfruit {
