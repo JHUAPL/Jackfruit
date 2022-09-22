@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>jackfruit</artifactId>
+    <artifactId>jackfruit-parent</artifactId>
     <groupId>edu.jhuapl.ses.srn</groupId>
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>demo</artifactId>
+  <artifactId>jackfruit-demo</artifactId>
 
-  <name>demo</name>
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <name>jackfruit-demo</name>
+  <description>Java Annotations Configuration library demo code</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -35,8 +33,8 @@
     </dependency>
     <dependency>
       <groupId>edu.jhuapl.ses.srn</groupId>
-      <artifactId>annotations</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <artifactId>jackfruit</artifactId>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -47,7 +45,7 @@
   </dependencies>
 
   <build>
-    <pluginManagement><!-- lock down plugins versions to avoid using Maven 
+    <pluginManagement>      <!-- lock down plugins versions to avoid using Maven 
         defaults (may be moved to parent pom) -->
       <plugins>
         <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->

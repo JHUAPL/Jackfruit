@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Take a supplied String and turn it into an Object
+ * This class will convert a String to/from an Object
  * 
  * @author nairah1
  *

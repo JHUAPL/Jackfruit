@@ -4,15 +4,15 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
-		<artifactId>jackfruit</artifactId>
+		<artifactId>jackfruit-parent</artifactId>
 		<groupId>edu.jhuapl.ses.srn</groupId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>annotations</artifactId>
+	<artifactId>jackfruit</artifactId>
 
-	<name>annotations</name>
-	<description>Java configuration library using annotations</description>
+	<name>jackfruit</name>
+	<description>Java Annotations Configuration library</description>
 
 	<!-- Specifies organization -->
 	<organization>
