@@ -25,17 +25,17 @@ import jackfruit.processor.ConfigProcessor;
  */
 public class TestProcessor {
 
-  
-  
+
+
   @Test
   public void runProcessor() throws Exception {
-    
+
     /*-
     System.out.println("TestProcessor");
     System.out.println("java.class.path: ");
     System.out.println(System.getProperty("java.class.path"));
     */
-    
+
     boolean ignore = true;
     if (!ignore) {
       Log4j2Configurator lc = Log4j2Configurator.getInstance();

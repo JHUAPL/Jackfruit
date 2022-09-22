@@ -1,0 +1,73 @@
+stages:
+  - build
+  - verify
+  - document
+  - deploy
+
+variables: 
+  JAVA_HOME: "/usr/lib/jvm/java-17-openjdk-amd64" # Sets Java version to run (see /opt for details)
+  VERSION_COMMIT: "GitLab CI Versioning Commit" # Commit text for version update
+  VERSION_BRANCH: "update_version" # Branch used to merge version update commit
+  # Sets the artifact cache to a local directory within build area
+  MAVEN_CLI_OPTS: "-Dmaven.repo.local=.m2/repository --batch-mode -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN"
+
+#Workflow rules that filters across the entire pipeline. Cleaner than -o ci.skip since there won't be a "skipped" pipeline. 
+workflow: 
+  rules:
+    # If user is not the runner, branch is the default branch, and the pipeline source is a push
+    - if: '$GITLAB_USER_LOGIN != $RUNNER_USER_LOGIN && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
+      when: always
+    # if the first statement fails, never succeed
+    - when: never
+
+# Cache the artifact repository (not the target directory, as that causes old classes that are deleted to persist, and be deployed when they shouldn't be).
+cache:
+  paths:
+    - .m2/repository/ 
+
+maven build:
+  stage: build
+  script:
+    # --- Checks if code compiles
+    - mvn $MAVEN_CLI_OPTS clean compile
+
+maven verify:
+  stage: verify
+  script:
+    # -fn indicates that it should never fail, this allows artifacts to be built even when unit tests fail to execute successfully
+    - mvn $MAVEN_CLI_OPTS clean verify
+  # instruct gitlab to capture the test reports
+  # test reporting to be handled in gitlab requires:
+  #   sudo gitlab-rails console
+  #   irb(main):001:0> Feature.enable(:junit_pipeline_view,Project.find(84))
+  artifacts:
+    reports:
+      junit:
+        - target/surefire-reports/TEST-*.xml
+        - target/failsafe-reports/TEST-*.xml
+  # Allows a this job to fail, and the pipeline will continue
+  allow_failure: true
+
+maven document:
+  stage: document
+  script: 
+    - mvn $MAVEN_CLI_OPTS clean -DadditionalJOption=-Xdoclint:none javadoc:aggregate-jar
+
+maven deploy:
+  stage: deploy
+  script:
+    # --- set version to date+hash
+    - UPDATED_VERSION=$(date -u +"%y.%m.%d")-$CI_COMMIT_SHORT_SHA
+    - echo updated deployment version to $UPDATED_VERSION
+  
+    # --- Set the update version in the pom file(s)
+    - mvn $MAVEN_CLI_OPTS versions:set -q -DnewVersion=${UPDATED_VERSION}
+  
+    # --- Deploy to artifactory 
+    # Again, -fn might be necessary here if artifacts are to be deployed even when unit tests fail
+    # -DskipTests will not execute unit tests, this should allow the artifact to be deployed if unit tests fail in the previous stage
+    # -Dmaven.test.skip=true will also stop the unit tests from being compiled--which potentially would speed this up
+    # -Dmaven.javadoc.failOnError=false instructs this to proceed even if javadoc generation fails
+    - mvn $MAVEN_CLI_OPTS -DskipTests -Dmaven.javadoc.failOnError=false clean deploy
+  when: manual
+

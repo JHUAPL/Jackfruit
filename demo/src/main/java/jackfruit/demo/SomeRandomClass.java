@@ -11,5 +11,9 @@ public class SomeRandomClass {
   public SomeRandomClass(String internalString) {
     this.internalString = internalString;
   }
-  
+
+  public String toUpperCase() {
+    return internalString.toUpperCase();
+  }
+
 }
