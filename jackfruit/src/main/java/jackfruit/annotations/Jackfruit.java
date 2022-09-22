@@ -10,9 +10,10 @@ import java.lang.annotation.Target;
  * an optional "prefix" argument that can be used to add a prefix to all of the configuration keys
  * created by the processor.
  * <p>
- * For example:
- * 
+ * For example: <br>
  * &#x0040;Jackfruit(prefix = "myPrefix")
+ * <p>
+ * Inspired by <a href="http://owner.aeonbits.org/">owner</a>.
  * 
  * @author nairah1
  *

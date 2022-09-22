@@ -68,10 +68,11 @@ public class ConfigProcessor extends AbstractProcessor {
 
     Messager messager = processingEnv.getMessager();
 
-    List<Element> annotatedInterfaces = roundEnv.getElementsAnnotatedWith(Jackfruit.class).stream()
-        .filter(e -> e.getKind() == ElementKind.INTERFACE).collect(Collectors.toList());
+    List<Element> annotatedElements = roundEnv.getElementsAnnotatedWith(Jackfruit.class).stream()
+        .filter(e -> e.getKind() == ElementKind.INTERFACE || e.getKind() == ElementKind.CLASS)
+        .collect(Collectors.toList());
 
-    for (Element element : annotatedInterfaces) {
+    for (Element element : annotatedElements) {
 
       try {
         if (element instanceof TypeElement) {
@@ -95,17 +96,19 @@ public class ConfigProcessor extends AbstractProcessor {
 
           TypeSpec.Builder classBuilder = TypeSpec.classBuilder(factoryName)
               .addModifiers(Modifier.PUBLIC, Modifier.FINAL).addSuperinterface(ptn);
-/*-
+          /*-
           // logger for the generated class
           FieldSpec loggerField = FieldSpec.builder(org.apache.logging.log4j.Logger.class, "logger")
               .initializer("$T.getLogger()", org.apache.logging.log4j.LogManager.class)
               .addModifiers(Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC).build();
           classBuilder.addField(loggerField);
-*/
-          // create a list of annotated methods
+          */
+
+          // create a list of methods annotated with DefaultValue - ignore everything else
           List<ExecutableElement> enclosedMethods = new ArrayList<>();
           for (Element e : annotatedType.getEnclosedElements()) {
-            if (e.getKind() == ElementKind.METHOD && e instanceof ExecutableElement)
+            if (e.getKind() == ElementKind.METHOD && e.getAnnotation(DefaultValue.class) != null
+                && e instanceof ExecutableElement)
               enclosedMethods.add((ExecutableElement) e);
           }
 
@@ -124,11 +127,11 @@ public class ConfigProcessor extends AbstractProcessor {
 
             List<TypeMirror> typeArgs = new ArrayList<>();
             if (erasure.getKind() == TypeKind.DECLARED) {
-              // these are the parameter types for a List
+              // these are the parameter types for a generic class
               List<? extends TypeMirror> args = ((DeclaredType) returnType).getTypeArguments();
               typeArgs.addAll(args);
             } else if (erasure.getKind().isPrimitive()) {
-
+              // no type arguments here
             } else {
               processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                   String.format("Unsupported kind %s for type %s!", erasure.getKind().toString(),
