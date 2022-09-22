@@ -6,13 +6,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This class will convert a String to/from an Object
+ * The ParserClass annotation specifies a class which implements the {@link Parser} interface to
+ * convert an object to and from a String.
  * 
  * @author nairah1
  *
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD})
+@Target(ElementType.METHOD)
 public @interface ParserClass {
   public Class<?> value();
 }

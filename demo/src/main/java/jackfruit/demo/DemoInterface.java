@@ -33,12 +33,6 @@ import jackfruit.annotations.ParserClass;
  * <ul>
  * <li>Optional, name of class to create object from String using its fromString() method</li>
  * </ul>
- * <li>
- * </ul>
- * <p>
- * How to handle blocks like List<MISEObservingMode>?
- * <p>
- * Use <a href="https://github.com/square/javapoet">JavaPoet</a> to build a factory?
  * <p>
  * Inspired by <a href="http://owner.aeonbits.org/">owner</a>.
  * 
@@ -47,7 +41,7 @@ import jackfruit.annotations.ParserClass;
  */
 
 @Jackfruit(prefix = "prefix")
-public interface DemoConfig {
+public interface DemoInterface {
 
   // default key is field name
   @Key("key")
