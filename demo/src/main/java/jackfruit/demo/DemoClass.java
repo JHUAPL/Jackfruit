@@ -15,7 +15,7 @@ public abstract class DemoClass {
   @DefaultValue("1")
   public abstract int intMethod();
 
-  @Comment("This is a very long comment line that really should be wrapped into more than one line")
+  @Comment("This is a very long comment line that really should be wrapped into more than one line but that's really up to you.")
   @DefaultValue("0.")
   public abstract Double doubleMethod();
 
@@ -38,12 +38,17 @@ public abstract class DemoClass {
   public abstract List<Double> doubles();
 
   @Comment("List of RandomClass")
-  @DefaultValue("obj1 obj2")
+  @DefaultValue("""
+      obj1
+      obj2
+
+      obj3 obj4
+      """)
   @ParserClass(SomeRandomClassParser.class)
   public abstract List<SomeRandomClass> randoms();
 
   public void noAnnotationsOnThisMethod() {
-    System.out.println("This method was not processed");
+    System.out.println("This method was not processed since it has no DefaultValue annotation");
   }
 
 }

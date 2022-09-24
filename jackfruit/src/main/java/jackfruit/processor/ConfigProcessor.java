@@ -31,7 +31,6 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.apache.commons.configuration2.Configuration;
-import org.apache.commons.text.WordUtils;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
@@ -69,8 +68,10 @@ public class ConfigProcessor extends AbstractProcessor {
 
     Messager messager = processingEnv.getMessager();
 
+    // find interfaces or abstract classes with the Jackfruit annotation
     List<Element> annotatedElements = roundEnv.getElementsAnnotatedWith(Jackfruit.class).stream()
-        .filter(e -> e.getKind() == ElementKind.INTERFACE || e.getKind() == ElementKind.CLASS)
+        .filter(e -> e.getKind() == ElementKind.INTERFACE
+            || (e.getKind() == ElementKind.CLASS && e.getModifiers().contains(Modifier.ABSTRACT)))
         .collect(Collectors.toList());
 
     for (Element element : annotatedElements) {
@@ -338,8 +339,7 @@ public class ConfigProcessor extends AbstractProcessor {
       if (ab.comment().length() > 0) {
         String commentName = String.format("%sComment", method.getSimpleName());
         methodBuilder.addStatement("$T $L = $S", String.class, commentName, ab.comment());
-        methodBuilder.addStatement("$N.setComment($S, $T.wrap($L, 80))", layout, key,
-            WordUtils.class, commentName);
+        methodBuilder.addStatement("$N.setComment($S, $L)", layout, key, commentName);
       }
     }
 
@@ -382,7 +382,8 @@ public class ConfigProcessor extends AbstractProcessor {
         String listName = method.getSimpleName() + "List";
         builder.addStatement("$T " + listName + " = new $T()", listType, arrayListType);
 
-        builder.addStatement("String [] parts = $S.split($S)", bundle.defaultValue(), "\\s+");
+        builder.addStatement("String [] parts = ($S).split($S)", bundle.defaultValue(),
+            "[\\n\\r\\s]+");
         builder.beginControlFlow("for (String part : parts)");
         builder.beginControlFlow("if (part.trim().length() > 0)");
         if (bundle.parserClass().isPresent()) {

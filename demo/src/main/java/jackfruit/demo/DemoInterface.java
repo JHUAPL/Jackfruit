@@ -49,7 +49,7 @@ public interface DemoInterface {
   @DefaultValue("1")
   int intMethod();
 
-  @Comment("This is a very long comment line that really should be wrapped into more than one line")
+  @Comment("This is a very long comment line that really should be wrapped into more than one line but that's really up to you.")
   @DefaultValue("0.")
   Double doubleMethod();
 
@@ -72,7 +72,12 @@ public interface DemoInterface {
   List<Double> doubles();
 
   @Comment("List of RandomClass")
-  @DefaultValue("obj1 obj2")
+  @DefaultValue("""
+          obj1
+          obj2
+          
+          obj3 obj4
+          """)
   @ParserClass(SomeRandomClassParser.class)
   List<SomeRandomClass> randoms();
 
