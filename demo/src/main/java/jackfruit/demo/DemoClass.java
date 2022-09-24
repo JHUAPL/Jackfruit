@@ -11,17 +11,24 @@ import jackfruit.annotations.ParserClass;
 public abstract class DemoClass {
 
   @Key("key")
-  @Comment("field comment")
-  @DefaultValue("0")
+  @Comment("One line comment")
+  @DefaultValue("1")
   public abstract int intMethod();
 
+  @Comment("This is a very long comment line that really should be wrapped into more than one line")
   @DefaultValue("0.")
   public abstract Double doubleMethod();
 
+  @Comment("""
+      This is a multiline
+      java text block.
+
+      This is a new paragraph.
+      """)
   @DefaultValue("Default String")
   public abstract String StringMethod();
 
-  @Comment("This string is serialized into an object")
+  @Comment("This string is serialized into an object\n\tThis comment contains a newline character, and this line starts with a tab.")
   @DefaultValue("serialized string")
   @ParserClass(SomeRandomClassParser.class)
   public abstract SomeRandomClass randomClass();
@@ -38,5 +45,5 @@ public abstract class DemoClass {
   public void noAnnotationsOnThisMethod() {
     System.out.println("This method was not processed");
   }
-  
+
 }
