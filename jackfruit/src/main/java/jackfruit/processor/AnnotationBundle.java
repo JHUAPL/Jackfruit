@@ -18,14 +18,14 @@ public abstract class AnnotationBundle {
   /**
    * 
    * @return the return type of this method without any parameters (e.g. return List rather than
-   *         List<String>}
+   *         List&lt;String&gt;)
    */
   public abstract TypeMirror erasure();
 
   /**
    * 
    * @return the parameterized types, if any of this method (e.g. return String if the annotated
-   *         method returns List<String>)
+   *         method returns List&lt;String&gt;)
    */
   public abstract List<TypeMirror> typeArgs();
 

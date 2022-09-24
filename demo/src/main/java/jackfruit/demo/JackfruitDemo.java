@@ -19,7 +19,7 @@ public class JackfruitDemo {
 
     // get an example config object
     DemoClass template = factory.getTemplate();
-
+    
     /*-
     // or if you prefer, use an interface
     DemoInterfaceFactory factory = new DemoInterfaceFactory();

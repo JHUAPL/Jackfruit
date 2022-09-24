@@ -31,6 +31,7 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.text.WordUtils;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
@@ -271,7 +272,7 @@ public class ConfigProcessor extends AbstractProcessor {
       AnnotationBundle ab = annotationsMap.get(method);
       String key = prefix + ab.key();
       if (needBlank) {
-        methodBuilder.addStatement(String.format("$N.setBlancLinesBefore(\"%s\", 1)", key), layout);
+        methodBuilder.addStatement("$N.setBlancLinesBefore($S, 1)", layout, key);
         needBlank = false;
       }
 
@@ -292,33 +293,54 @@ public class ConfigProcessor extends AbstractProcessor {
             ParameterizedTypeName.get(ClassName.get(java.util.ArrayList.class), stringType);
         String listName = method.getSimpleName() + "List";
         methodBuilder.addStatement("$T " + listName + " = new $T()", listType, arrayListType);
-        methodBuilder
-            .beginControlFlow(String.format("for (var element : t.%s())", method.getSimpleName()));
+        methodBuilder.beginControlFlow("for (var element : t.$L())", method.getSimpleName());
         if (ab.parserClass().isPresent()) {
-          methodBuilder
-              .addStatement(String.format("%s.add(%s.toString(element))", listName, parserName));
+          methodBuilder.addStatement("$L.add($L.toString(element))", listName, parserName);
         } else {
-          methodBuilder
-              .addStatement(String.format("%s.add(String.format(\"%%s\", element))", listName));
+          TypeMirror typeArg = ab.typeArgs().get(0);
+          if (ConfigProcessorUtils.isByte(typeArg, processingEnv))
+            methodBuilder.addStatement("$L.add($T.toString(element))", listName,
+                java.lang.Byte.class);
+          if (ConfigProcessorUtils.isBoolean(typeArg, processingEnv))
+            methodBuilder.addStatement("$L.add($T.toString(element))", listName,
+                java.lang.Boolean.class);
+          if (ConfigProcessorUtils.isDouble(typeArg, processingEnv))
+            methodBuilder.addStatement("$L.add($T.toString(element))", listName,
+                java.lang.Double.class);
+          if (ConfigProcessorUtils.isFloat(typeArg, processingEnv))
+            methodBuilder.addStatement("$L.add($T.toString(element))", listName,
+                java.lang.Float.class);
+          if (ConfigProcessorUtils.isInteger(typeArg, processingEnv))
+            methodBuilder.addStatement("$L.add($T.toString(element))", listName,
+                java.lang.Integer.class);
+          if (ConfigProcessorUtils.isLong(typeArg, processingEnv))
+            methodBuilder.addStatement("$L.add($T.toString(element))", listName,
+                java.lang.Long.class);
+          if (ConfigProcessorUtils.isShort(typeArg, processingEnv))
+            methodBuilder.addStatement("$L.add($T.toString(element))", listName,
+                java.lang.Short.class);
+          if (ConfigProcessorUtils.isString(typeArg, processingEnv))
+            methodBuilder.addStatement("$L.add(element)", listName);
         }
         methodBuilder.endControlFlow();
-        methodBuilder.addStatement(String.format("config.setProperty(\"%s\", %s)", key, listName));
+        methodBuilder.addStatement("config.setProperty($S, $L)", key, listName);
       } else {
         if (ab.parserClass().isPresent()) {
           // store the serialized string as the property
-          methodBuilder
-              .addStatement(String.format("config.setProperty(\"%s\", %s.toString($N.%s()))", key,
-                  parserName, method.getSimpleName()), ps);
+          methodBuilder.addStatement("config.setProperty($S, $L.toString($N.$L()))", key,
+              parserName, ps, method.getSimpleName());
         } else {
-          methodBuilder.addStatement(
-              String.format("config.setProperty(\"%s\", t.%s())", key, method.getSimpleName()));
+          methodBuilder.addStatement("config.setProperty($S, t.$L())", key, method.getSimpleName());
         }
       }
 
       // add the comment
-      if (ab.comment().length() > 0)
-        methodBuilder.addStatement(
-            String.format("$N.setComment(\"%s\", \"%s\")", key, ab.comment()), layout);
+      if (ab.comment().length() > 0) {
+        String commentName = String.format("%sComment", method.getSimpleName());
+        methodBuilder.addStatement("$T $L = $S", String.class, commentName, ab.comment());
+        methodBuilder.addStatement("$N.setComment($S, $T.wrap($L, 80))", layout, key,
+            WordUtils.class, commentName);
+      }
     }
 
     methodBuilder.addCode("return config;");
@@ -347,7 +369,7 @@ public class ConfigProcessor extends AbstractProcessor {
       if (bundle.parserClass().isPresent()) {
         parser = bundle.parserClass().get();
         parserName = method.getSimpleName() + "Parser";
-        builder.addStatement(String.format("$T %s = new $T()", parserName), parser, parser);
+        builder.addStatement("$T $L = new $T()", parser, parserName, parser);
       }
 
       if (ConfigProcessorUtils.isList(bundle.erasure(), processingEnv)) {
@@ -360,49 +382,46 @@ public class ConfigProcessor extends AbstractProcessor {
         String listName = method.getSimpleName() + "List";
         builder.addStatement("$T " + listName + " = new $T()", listType, arrayListType);
 
-        builder.addStatement(
-            String.format("String [] parts = \"%s\".split(\"\\\\s+\")", bundle.defaultValue()));
+        builder.addStatement("String [] parts = $S.split($S)", bundle.defaultValue(), "\\s+");
         builder.beginControlFlow("for (String part : parts)");
+        builder.beginControlFlow("if (part.trim().length() > 0)");
         if (bundle.parserClass().isPresent()) {
-          builder.addStatement(String.format("%s.add(%s.fromString(part))", listName, parserName));
+          builder.addStatement("$L.add($L.fromString(part))", listName, parserName);
         } else {
           TypeMirror typeArg = bundle.typeArgs().get(0);
           if (ConfigProcessorUtils.isByte(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Byte.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Byte.class);
           if (ConfigProcessorUtils.isBoolean(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Boolean.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Boolean.class);
           if (ConfigProcessorUtils.isDouble(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Double.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Double.class);
           if (ConfigProcessorUtils.isFloat(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Float.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Float.class);
           if (ConfigProcessorUtils.isInteger(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Integer.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Integer.class);
           if (ConfigProcessorUtils.isLong(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Long.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Long.class);
           if (ConfigProcessorUtils.isShort(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Short.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Short.class);
           if (ConfigProcessorUtils.isString(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add(part)", listName));
+            builder.addStatement("$L.add(part)", listName);
         }
         builder.endControlFlow();
-        builder.addStatement(String.format("return %s", listName));
+        builder.endControlFlow();
+        builder.addStatement("return $L", listName);
 
       } else {
         if (bundle.parserClass().isPresent()) {
-          builder.addStatement(
-              String.format("return %s.fromString(\"%s\")", parserName, bundle.defaultValue()));
+          builder.addStatement("return $L.fromString($S)", parserName, bundle.defaultValue());
         } else {
           if (ConfigProcessorUtils.isString(bundle.erasure(), processingEnv)) {
-            builder.addStatement(String.format("return \"%s\"", bundle.defaultValue()));
+            builder.addStatement("return $S", bundle.defaultValue());
           } else {
-            builder.addStatement(String.format("return %s", bundle.defaultValue()));
+            if (bundle.defaultValue().trim().length() == 0) {
+              processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+                  String.format("Default value on method %s is blank!", method.getSimpleName()));
+            }
+            builder.addStatement("return $L", bundle.defaultValue());
           }
         }
       }
@@ -432,7 +451,7 @@ public class ConfigProcessor extends AbstractProcessor {
       if (bundle.parserClass().isPresent()) {
         parser = bundle.parserClass().get();
         parserName = method.getSimpleName() + "Parser";
-        builder.addStatement(String.format("$T %s = new $T()", parserName), parser, parser);
+        builder.addStatement("$T $L = new $T()", parser, parserName, parser);
       }
 
       if (ConfigProcessorUtils.isList(bundle.erasure(), processingEnv)) {
@@ -443,68 +462,54 @@ public class ConfigProcessor extends AbstractProcessor {
             ParameterizedTypeName.get(ClassName.get(java.util.ArrayList.class), argType);
         String listName = method.getSimpleName() + "List";
         builder.addStatement("$T " + listName + " = new $T()", listType, arrayListType);
-        builder.addStatement(String.format("String [] parts = config.getStringArray(\"%s\")",
-            prefix + bundle.key()));
+        builder.addStatement("String [] parts = config.getStringArray($S)", prefix + bundle.key());
         builder.beginControlFlow("for (String part : parts)");
+        builder.beginControlFlow("if (part.trim().length() > 0)");
         if (bundle.parserClass().isPresent()) {
-          builder.addStatement(String.format("%s.add(%s.fromString(part))", listName, parserName));
+          builder.addStatement("$L.add($L.fromString(part))", listName, parserName);
         } else {
           TypeMirror typeArg = bundle.typeArgs().get(0);
           if (ConfigProcessorUtils.isByte(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Byte.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Byte.class);
           if (ConfigProcessorUtils.isBoolean(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Boolean.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Boolean.class);
           if (ConfigProcessorUtils.isDouble(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Double.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Double.class);
           if (ConfigProcessorUtils.isFloat(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Float.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Float.class);
           if (ConfigProcessorUtils.isInteger(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Integer.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Integer.class);
           if (ConfigProcessorUtils.isLong(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Long.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Long.class);
           if (ConfigProcessorUtils.isShort(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add($T.valueOf(part))", listName),
-                java.lang.Short.class);
+            builder.addStatement("$L.add($T.valueOf(part))", listName, java.lang.Short.class);
           if (ConfigProcessorUtils.isString(typeArg, processingEnv))
-            builder.addStatement(String.format("%s.add(part)", listName));
+            builder.addStatement("$L.add(part)", listName);
         }
         builder.endControlFlow();
-        builder.addStatement(String.format("return %s", listName));
+        builder.endControlFlow();
+        builder.addStatement("return $L", listName);
       } else {
         if (bundle.parserClass().isPresent()) {
-          builder.addStatement(String.format("return %s.fromString(config.getString(\"%s\"))",
-              parserName, prefix + bundle.key()));
+          builder.addStatement("return $L.fromString(config.getString($S))", parserName,
+              prefix + bundle.key());
         } else {
           if (ConfigProcessorUtils.isBoolean(bundle.erasure(), processingEnv)) {
-            builder.addStatement(
-                String.format("return config.getBoolean(\"%s\")", prefix + bundle.key()));
+            builder.addStatement("return config.getBoolean($S)", prefix + bundle.key());
           } else if (ConfigProcessorUtils.isByte(bundle.erasure(), processingEnv)) {
-            builder.addStatement(
-                String.format("return config.getByte(\"%s\")", prefix + bundle.key()));
+            builder.addStatement("return config.getByte($S)", prefix + bundle.key());
           } else if (ConfigProcessorUtils.isDouble(bundle.erasure(), processingEnv)) {
-            builder.addStatement(
-                String.format("return config.getDouble(\"%s\")", prefix + bundle.key()));
+            builder.addStatement("return config.getDouble($S)", prefix + bundle.key());
           } else if (ConfigProcessorUtils.isFloat(bundle.erasure(), processingEnv)) {
-            builder.addStatement(
-                String.format("return config.getFloat(\"%s\")", prefix + bundle.key()));
+            builder.addStatement("return config.getFloat($S)", prefix + bundle.key());
           } else if (ConfigProcessorUtils.isInteger(bundle.erasure(), processingEnv)) {
-            builder
-                .addStatement(String.format("return config.getInt(\"%s\")", prefix + bundle.key()));
+            builder.addStatement("return config.getInt($S)", prefix + bundle.key());
           } else if (ConfigProcessorUtils.isLong(bundle.erasure(), processingEnv)) {
-            builder.addStatement(
-                String.format("return config.getLong(\"%s\")", prefix + bundle.key()));
+            builder.addStatement("return config.getLong($S)", prefix + bundle.key());
           } else if (ConfigProcessorUtils.isShort(bundle.erasure(), processingEnv)) {
-            builder.addStatement(
-                String.format("return config.getShort(\"%s\")", prefix + bundle.key()));
+            builder.addStatement("return config.getShort($S)", prefix + bundle.key());
           } else if (ConfigProcessorUtils.isString(bundle.erasure(), processingEnv)) {
-            builder.addStatement(
-                String.format("return config.getString(\"%s\")", prefix + bundle.key()));
+            builder.addStatement("return config.getString($S)", prefix + bundle.key());
           } else {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                 "Can't handle return type " + m.getReturnType().getCanonicalName());
