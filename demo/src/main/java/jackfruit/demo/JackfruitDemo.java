@@ -13,18 +13,18 @@ public class JackfruitDemo {
 
   public static void main(String[] args) {
 
-    /*-
     // this factory is built by the annotation processor after reading
     // DemoClass
     DemoClassFactory factory = new DemoClassFactory();
-    
+
     // get an example config object
     DemoClass template = factory.getTemplate();
-    */
 
+    /*-
     // or if you prefer, use an interface
     DemoInterfaceFactory factory = new DemoInterfaceFactory();
     DemoInterface template = factory.getTemplate();
+    */
 
     // generate an Apache PropertiesConfiguration object. This can be written out to
     // a file
