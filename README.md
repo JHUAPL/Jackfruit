@@ -1,8 +1,8 @@
-# jackfruit
+# Jackfruit
 
 ## Quick start
 
-Jackfruit processes annotations on Java interfaces to generate code that can read and write Apache Configuration files.  The `demo` module includes sample code.  In the top level directory, run `mvn clean package`, which will build the annotation library, run the annotation processor on the file `demo/src/main/java/jackfruit/demo/DemoInterface.java`, and generate the class `demo/target/generated-sources/annotations/jackfruit/demo/DemoInterfaceFactory.java`.  The file `demo/src/main/java/jackfruit/demo/JackfruitDemo.java` shows some simple examples of use.
+Jackfruit processes annotations on Java interfaces and abstract classes to generate code that can read and write Apache Configuration files.  The `demo` module includes sample code.  In the top level directory, run `mvn clean package`, which will build the annotation library, run the annotation processor on the file `demo/src/main/java/jackfruit/demo/DemoInterface.java`, and generate the class `demo/target/generated-sources/annotations/jackfruit/demo/DemoInterfaceFactory.java`.  The file `demo/src/main/java/jackfruit/demo/JackfruitDemo.java` shows some simple examples of use.
 
 ## Introduction
 
@@ -131,6 +131,10 @@ The annotation processor generates a class called DemoInterfaceFactory.  An exam
     for (SomeRandomClass random : randoms)
       System.out.println("random.toUpperCase() = " + random.toUpperCase());
 ```
+
+## Inheritance
+
+Methods can be inherited by abstract classes.  The `@Jackfruit` annotation must be present on the parent class as well as the inherited class.  The annotation processor will build factory classes for both parent and child classes.
 
 ## Supported Annotations
 

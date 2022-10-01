@@ -8,11 +8,12 @@ import jackfruit.annotations.Key;
 import jackfruit.annotations.ParserClass;
 
 @Jackfruit(prefix = "prefix")
-public abstract class DemoClass {
+public abstract class DemoClass extends DemoSuperClass {
 
   @Key("key")
-  @Comment("One line comment")
+  @Comment("This method overrides one defined in DemoSuperClass")
   @DefaultValue("1")
+  @Override
   public abstract int intMethod();
 
   @Comment("This is a very long comment line that really should be wrapped into more than one line but that's really up to you.")

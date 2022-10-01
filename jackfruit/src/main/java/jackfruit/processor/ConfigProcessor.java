@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -106,17 +107,41 @@ public class ConfigProcessor extends AbstractProcessor {
           classBuilder.addField(loggerField);
           */
 
+          // this contains a hierarchy of parent classes
+          List<DeclaredType> superClasses = new ArrayList<>();
+          {
+            TypeElement thisElement = annotatedType;
+            TypeMirror superClass = thisElement.getSuperclass();
+            while (superClass.getKind() == TypeKind.DECLARED) {
+              DeclaredType superType = (DeclaredType) superClass;
+              // have to use asElement() here
+              if (superType.asElement().getAnnotation(Jackfruit.class) == null) {
+                break;
+              }
+
+              superClasses.add(superType);
+              thisElement = (TypeElement) superType.asElement();
+              superClass = thisElement.getSuperclass();
+            }
+          }
+
+          Collections.reverse(superClasses);
+          superClasses.add((DeclaredType) annotatedType.asType());
+
           // create a list of methods annotated with DefaultValue - ignore everything else
-          List<ExecutableElement> enclosedMethods = new ArrayList<>();
-          for (Element e : annotatedType.getEnclosedElements()) {
-            if (e.getKind() == ElementKind.METHOD && e.getAnnotation(DefaultValue.class) != null
-                && e instanceof ExecutableElement)
-              enclosedMethods.add((ExecutableElement) e);
+          Map<String, ExecutableElement> enclosedMethods = new LinkedHashMap<>();
+          for (DeclaredType superClass : superClasses) {
+            for (Element e : superClass.asElement().getEnclosedElements()) {
+              if (e.getKind() == ElementKind.METHOD && e.getAnnotation(DefaultValue.class) != null
+                  && e instanceof ExecutableElement) {
+                enclosedMethods.put(e.getSimpleName().toString(), (ExecutableElement) e);
+              }
+            }
           }
 
           // holds the annotation information on each method
           Map<ExecutableElement, AnnotationBundle> annotationsMap = new LinkedHashMap<>();
-          for (ExecutableElement e : enclosedMethods) {
+          for (ExecutableElement e : enclosedMethods.values()) {
 
             ImmutableAnnotationBundle.Builder builder = ImmutableAnnotationBundle.builder();
             builder.key(e.getSimpleName().toString());
