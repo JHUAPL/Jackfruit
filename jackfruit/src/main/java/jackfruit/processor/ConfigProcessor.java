@@ -22,6 +22,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -66,16 +67,19 @@ import jackfruit.annotations.ParserClass;
 @AutoService(Processor.class)
 public class ConfigProcessor extends AbstractProcessor {
 
+  private List<Class<? extends Annotation>> supportedMethodAnnotations;
+  private Messager messager;
+
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
-    List<Class<? extends Annotation>> supportedMethodAnnotations = new ArrayList<>();
+    supportedMethodAnnotations = new ArrayList<>();
     supportedMethodAnnotations.add(Comment.class);
     supportedMethodAnnotations.add(DefaultValue.class);
     supportedMethodAnnotations.add(Key.class);
     supportedMethodAnnotations.add(ParserClass.class);
 
-    Messager messager = processingEnv.getMessager();
+    messager = processingEnv.getMessager();
 
     // find interfaces or abstract classes with the Jackfruit annotation
     List<Element> annotatedElements = roundEnv.getElementsAnnotatedWith(Jackfruit.class).stream()
@@ -116,7 +120,7 @@ public class ConfigProcessor extends AbstractProcessor {
           */
 
           // this contains a hierarchy of parent classes
-          List<DeclaredType> superClasses = new ArrayList<>();
+          List<DeclaredType> classHierarchy = new ArrayList<>();
           {
             TypeElement thisElement = annotatedType;
             TypeMirror superClass = thisElement.getSuperclass();
@@ -127,22 +131,27 @@ public class ConfigProcessor extends AbstractProcessor {
                 break;
               }
 
-              superClasses.add(superType);
+              classHierarchy.add(superType);
               thisElement = (TypeElement) superType.asElement();
               superClass = thisElement.getSuperclass();
             }
           }
 
-          Collections.reverse(superClasses);
-          superClasses.add((DeclaredType) annotatedType.asType());
+          Collections.reverse(classHierarchy);
+          classHierarchy.add((DeclaredType) annotatedType.asType());
 
           // create a list of methods annotated with DefaultValue - ignore everything else
-          Map<String, ExecutableElement> enclosedMethods = new LinkedHashMap<>();
-          for (DeclaredType superClass : superClasses) {
-            for (Element e : superClass.asElement().getEnclosedElements()) {
+          Map<Name, ExecutableElement> enclosedMethods = new LinkedHashMap<>();
+          Map<Name, AnnotationBundle> defaultAnnotationsMap = new LinkedHashMap<>();
+          for (DeclaredType thisType : classHierarchy) {
+            for (Element e : thisType.asElement().getEnclosedElements()) {
               if (e.getKind() == ElementKind.METHOD && e.getAnnotation(DefaultValue.class) != null
                   && e instanceof ExecutableElement) {
-                enclosedMethods.put(e.getSimpleName().toString(), (ExecutableElement) e);
+                ExecutableElement ex = (ExecutableElement) e;
+                enclosedMethods.put(ex.getSimpleName(), ex);
+                AnnotationBundle defaultValues = defaultAnnotationsMap.get(ex.getSimpleName());
+                defaultAnnotationsMap.put(ex.getSimpleName(),
+                    buildAnnotationBundle(ex, defaultValues));
               }
             }
           }
@@ -150,83 +159,8 @@ public class ConfigProcessor extends AbstractProcessor {
           // holds the annotation information on each method
           Map<ExecutableElement, AnnotationBundle> annotationsMap = new LinkedHashMap<>();
           for (ExecutableElement e : enclosedMethods.values()) {
-
-            ImmutableAnnotationBundle.Builder builder = ImmutableAnnotationBundle.builder();
-            builder.key(e.getSimpleName().toString());
-            builder.comment("");
-
-            Types types = processingEnv.getTypeUtils();
-            TypeMirror returnType = e.getReturnType();
-            TypeMirror erasure = types.erasure(returnType);
-            builder.erasure(erasure);
-
-            List<TypeMirror> typeArgs = new ArrayList<>();
-            if (erasure.getKind() == TypeKind.DECLARED) {
-              // these are the parameter types for a generic class
-              List<? extends TypeMirror> args = ((DeclaredType) returnType).getTypeArguments();
-              typeArgs.addAll(args);
-            } else if (erasure.getKind().isPrimitive()) {
-              // no type arguments here
-            } else {
-              processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                  String.format("Unsupported kind %s for type %s!", erasure.getKind().toString(),
-                      erasure.toString()));
-            }
-
-            builder.addAllTypeArgs(typeArgs);
-
-            String defaultValue = null;
-
-            List<Annotation> methodAnnotations = new ArrayList<>();
-            for (var a : supportedMethodAnnotations)
-              methodAnnotations.add(e.getAnnotation(a));
-
-            for (Annotation annotation : methodAnnotations) {
-              if (annotation == null)
-                continue;
-
-              if (annotation instanceof Key) {
-                builder.key(((Key) annotation).value());
-              } else if (annotation instanceof Comment) {
-                builder.comment(((Comment) annotation).value());
-              } else if (annotation instanceof DefaultValue) {
-                DefaultValue d = (DefaultValue) annotation;
-                defaultValue = d.value();
-              } else if (annotation instanceof ParserClass) {
-                ParserClass pc = (ParserClass) annotation;
-
-                // this works, but there has to be a better way?
-                TypeMirror tm;
-                try {
-                  // see
-                  // https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation
-                  tm = processingEnv.getElementUtils().getTypeElement(pc.value().toString())
-                      .asType();
-                } catch (MirroredTypeException mte) {
-                  tm = mte.getTypeMirror();
-                }
-                builder.parserClass(tm);
-              } else {
-                throw new IllegalArgumentException(
-                    "Unknown annotation type " + annotation.getClass().getSimpleName());
-              }
-            }
-
-            // if a method does not have a default value, it will not be included in the generated
-            // code
-            if (defaultValue == null) {
-              messager.printMessage(Diagnostic.Kind.WARNING,
-                  String.format("No default value on method %s!", e.getSimpleName()));
-              continue;
-            }
-
-            builder.defaultValue(defaultValue);
-            AnnotationBundle bundle = builder.build();
-            if (ConfigProcessorUtils.isList(bundle.erasure(), processingEnv)
-                && bundle.typeArgs().size() == 0)
-              messager.printMessage(Diagnostic.Kind.ERROR,
-                  String.format("No parameter type for List on method %s!", e.getSimpleName()));
-            annotationsMap.put(e, bundle);
+            AnnotationBundle defaultValues = defaultAnnotationsMap.get(e.getSimpleName());
+            annotationsMap.put(e, buildAnnotationBundle(e, defaultValues));
           }
 
           // generate the methods from the interface
@@ -273,6 +207,87 @@ public class ConfigProcessor extends AbstractProcessor {
     }
     return true;
 
+  }
+
+  /**
+   * 
+   * @param e annotated method
+   * @param defaultValues default values for annotations - could be from a parent class
+   * @return annotation values
+   */
+  private AnnotationBundle buildAnnotationBundle(ExecutableElement e,
+      AnnotationBundle defaultValues) {
+
+    ImmutableAnnotationBundle.Builder builder = ImmutableAnnotationBundle.builder();
+    builder.key(e.getSimpleName().toString());
+    builder.comment("");
+    builder.defaultValue("");
+    if (defaultValues != null) {
+      builder.key(defaultValues.key());
+      builder.comment(defaultValues.comment());
+      builder.defaultValue(defaultValues.defaultValue());
+      if (defaultValues.parserClass().isPresent())
+        builder.parserClass(defaultValues.parserClass().get());
+    }
+
+    Types types = processingEnv.getTypeUtils();
+    TypeMirror returnType = e.getReturnType();
+    TypeMirror erasure = types.erasure(returnType);
+    builder.erasure(erasure);
+
+    List<TypeMirror> typeArgs = new ArrayList<>();
+    if (erasure.getKind() == TypeKind.DECLARED) {
+      // these are the parameter types for a generic class
+      List<? extends TypeMirror> args = ((DeclaredType) returnType).getTypeArguments();
+      typeArgs.addAll(args);
+    } else if (erasure.getKind().isPrimitive()) {
+      // no type arguments here
+    } else {
+      processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, String.format(
+          "Unsupported kind %s for type %s!", erasure.getKind().toString(), erasure.toString()));
+    }
+
+    builder.addAllTypeArgs(typeArgs);
+
+    List<Annotation> methodAnnotations = new ArrayList<>();
+    for (var a : supportedMethodAnnotations)
+      methodAnnotations.add(e.getAnnotation(a));
+
+    for (Annotation annotation : methodAnnotations) {
+      if (annotation == null)
+        continue;
+
+      if (annotation instanceof Key) {
+        builder.key(((Key) annotation).value());
+      } else if (annotation instanceof Comment) {
+        builder.comment(((Comment) annotation).value());
+      } else if (annotation instanceof DefaultValue) {
+        builder.defaultValue(((DefaultValue) annotation).value());
+      } else if (annotation instanceof ParserClass) {
+        ParserClass pc = (ParserClass) annotation;
+
+        // this works, but there has to be a better way?
+        TypeMirror tm;
+        try {
+          // see
+          // https://stackoverflow.com/questions/7687829/java-6-annotation-processing-getting-a-class-from-an-annotation
+          tm = processingEnv.getElementUtils().getTypeElement(pc.value().toString()).asType();
+        } catch (MirroredTypeException mte) {
+          tm = mte.getTypeMirror();
+        }
+        builder.parserClass(tm);
+      } else {
+        throw new IllegalArgumentException(
+            "Unknown annotation type " + annotation.getClass().getSimpleName());
+      }
+    }
+
+    AnnotationBundle bundle = builder.build();
+    if (ConfigProcessorUtils.isList(bundle.erasure(), processingEnv)
+        && bundle.typeArgs().size() == 0)
+      messager.printMessage(Diagnostic.Kind.ERROR,
+          String.format("No parameter type for List on method %s!", e.getSimpleName()));
+    return bundle;
   }
 
   /**

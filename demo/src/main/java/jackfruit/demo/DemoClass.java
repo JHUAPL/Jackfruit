@@ -4,14 +4,12 @@ import java.util.List;
 import jackfruit.annotations.Comment;
 import jackfruit.annotations.DefaultValue;
 import jackfruit.annotations.Jackfruit;
-import jackfruit.annotations.Key;
 import jackfruit.annotations.ParserClass;
 
 @Jackfruit(prefix = "prefix")
 public abstract class DemoClass extends DemoSuperClass {
 
-  @Key("key")
-  @Comment("This method overrides one defined in DemoSuperClass")
+  @Comment("This method's key name is inherited from DemoSuperSuperClass")
   @DefaultValue("1")
   @Override
   public abstract int intMethod();
@@ -29,14 +27,13 @@ public abstract class DemoClass extends DemoSuperClass {
   @DefaultValue("Default String")
   public abstract String StringMethod();
 
-  @Comment("This string is serialized into an object\n\tThis comment contains a newline character, and this line starts with a tab.")
-  @DefaultValue("serialized string")
-  @ParserClass(SomeRandomClassParser.class)
-  public abstract SomeRandomClass randomClass();
-
   @Comment("List of Doubles")
   @DefaultValue("0. 5.34 17")
   public abstract List<Double> doubles();
+
+  @DefaultValue("set in DemoClass, parser inherited from DemoSuperClass")
+  @Override
+  public abstract SomeRandomClass randomClass();
 
   @Comment("List of RandomClass")
   @DefaultValue("""
