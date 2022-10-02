@@ -48,7 +48,15 @@ import jackfruit.annotations.Key;
 import jackfruit.annotations.ParserClass;
 
 /**
- * https://www.javacodegeeks.com/2015/09/java-annotation-processors.html
+ * Useful references for writing an annotation processor:
+ * <ul>
+ * <li><a href=
+ * "https://www.javacodegeeks.com/2015/09/java-annotation-processors.html">https://www.javacodegeeks.com/2015/09/java-annotation-processors.html</a></li>
+ * <li><a href=
+ * "https://hannesdorfmann.com/annotation-processing/annotationprocessing101/">https://hannesdorfmann.com/annotation-processing/annotationprocessing101/</a></li>
+ * <li><a href=
+ * "http://www.javatronic.fr/articles/2014/08/31/how_to_make_sure_javac_is_using_a_specific_annotation_processor.html">http://www.javatronic.fr/articles/2014/08/31/how_to_make_sure_javac_is_using_a_specific_annotation_processor.html</a></li>
+ * </ul>
  * 
  * @author nairah1
  *

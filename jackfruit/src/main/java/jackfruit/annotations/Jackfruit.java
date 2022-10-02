@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  * @author nairah1
  *
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface Jackfruit {
   public String prefix() default "";
