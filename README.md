@@ -149,7 +149,7 @@ The `@Comment` annotation specifies the comment that appears in the configuratio
 
 ### DefaultValue
 
-The `@DefaultValue` annotation is a String used to initialize the parameter.  This is a required annotation.  Strings and primitives (and their corresponding wrapper types) are read natively.  Other objects will need to use the `@ParserClass` annotation to specify a class which implements the `jackfruit.annotations.Parser` interface to convert the object to and from a String.
+The `@DefaultValue` annotation is a String used to initialize the parameter.  This is a required annotation.  If it is absent no other annotations on this method will be processed.  Strings and primitives (and their corresponding wrapper types) are read natively.  Other objects will need to use the `@ParserClass` annotation to specify a class which implements the `jackfruit.annotations.Parser` interface to convert the object to and from a String.
 
 ### Key
 

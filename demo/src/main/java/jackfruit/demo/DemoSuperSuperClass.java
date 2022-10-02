@@ -3,6 +3,7 @@ package jackfruit.demo;
 import jackfruit.annotations.Comment;
 import jackfruit.annotations.DefaultValue;
 import jackfruit.annotations.Jackfruit;
+import jackfruit.annotations.Key;
 
 @Jackfruit
 public abstract class DemoSuperSuperClass {
@@ -17,5 +18,6 @@ public abstract class DemoSuperSuperClass {
 
   @Comment("from DemoSuperSuperClass")
   @DefaultValue("3")
+  @Key("key")
   public abstract int intMethod();
 }
