@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
  * @author nairah1
  *
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)
 public @interface DefaultValue {
   public String value() default "";

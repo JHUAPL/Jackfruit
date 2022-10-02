@@ -2,7 +2,7 @@
 
 ## Quick start
 
-Jackfruit processes annotations on Java interfaces and abstract classes to generate code that can read and write Apache Configuration files.  The `demo` module includes sample code.  In the top level directory, run `mvn clean package`, which will build the annotation library, run the annotation processor on the file `demo/src/main/java/jackfruit/demo/DemoInterface.java`, and generate the class `demo/target/generated-sources/annotations/jackfruit/demo/DemoInterfaceFactory.java`.  The file `demo/src/main/java/jackfruit/demo/JackfruitDemo.java` shows some simple examples of use.
+Jackfruit processes annotations on Java interfaces and abstract classes to generate code that can read and write Apache Configuration files.  In the top level directory, run `mvn clean package`, which will build the annotation library in the `jackfruit` module and run the annotation processor in the `demo` module.  The file `demo/src/main/java/jackfruit/demo/JackfruitDemo.java` shows some simple examples of use.
 
 ## Introduction
 
