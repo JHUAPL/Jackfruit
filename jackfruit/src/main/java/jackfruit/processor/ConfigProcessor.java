@@ -163,6 +163,21 @@ public class ConfigProcessor extends AbstractProcessor {
             annotationsMap.put(e, buildAnnotationBundle(e, defaultValues));
           }
 
+          // default constructor; initialize prefix
+          String prefixMemberName = "prefix";
+          classBuilder.addField(String.class, prefixMemberName, Modifier.PRIVATE, Modifier.FINAL);
+          MethodSpec constructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
+              .addStatement("this.$N = $S", prefixMemberName, prefix).build();
+          classBuilder.addMethod(constructor);
+
+          // add a constructor where caller can set prefix
+          constructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
+              .addParameter(String.class, prefixMemberName)
+              .addStatement("if ($N.length() > 0) $N += $S", prefixMemberName, prefixMemberName,
+                  ".")
+              .addStatement("this.$N = $N", prefixMemberName, prefixMemberName).build();
+          classBuilder.addMethod(constructor);
+
           // generate the methods from the interface
           List<MethodSpec> methods = new ArrayList<>();
           for (Method m : ConfigFactory.class.getMethods()) {
@@ -171,17 +186,17 @@ public class ConfigProcessor extends AbstractProcessor {
               continue;
 
             if (m.getName().equals("toConfig")) {
-              MethodSpec toConfig = buildToConfig(tvn, m, annotationsMap, prefix);
+              MethodSpec toConfig = buildToConfig(tvn, m, annotationsMap, prefixMemberName);
               methods.add(toConfig);
             }
 
             if (m.getName().equals("getTemplate")) {
-              MethodSpec getTemplate = buildGetTemplate(tvn, m, annotationsMap, prefix);
+              MethodSpec getTemplate = buildGetTemplate(tvn, m, annotationsMap);
               methods.add(getTemplate);
             }
 
             if (m.getName().equals("fromConfig")) {
-              MethodSpec fromConfig = buildFromConfig(tvn, m, annotationsMap, prefix);
+              MethodSpec fromConfig = buildFromConfig(tvn, m, annotationsMap, prefixMemberName);
               methods.add(fromConfig);
             }
 
@@ -300,7 +315,7 @@ public class ConfigProcessor extends AbstractProcessor {
    * @return
    */
   private MethodSpec buildToConfig(TypeVariableName tvn, Method m,
-      Map<ExecutableElement, AnnotationBundle> annotationsMap, String prefix) {
+      Map<ExecutableElement, AnnotationBundle> annotationsMap, String prefixMemberName) {
     ParameterSpec ps = ParameterSpec.builder(tvn, "t").build();
     ParameterSpec layout = ParameterSpec.builder(TypeVariableName.get(
         org.apache.commons.configuration2.PropertiesConfigurationLayout.class.getCanonicalName()),
@@ -319,9 +334,10 @@ public class ConfigProcessor extends AbstractProcessor {
     boolean needBlank = true;
     for (ExecutableElement method : annotationsMap.keySet()) {
       AnnotationBundle ab = annotationsMap.get(method);
-      String key = prefix + ab.key();
+      String key = ab.key();
       if (needBlank) {
-        methodBuilder.addStatement("$N.setBlancLinesBefore($S, 1)", layout, key);
+        methodBuilder.addStatement("$N.setBlancLinesBefore($N + $S, 1)", layout, prefixMemberName,
+            key);
         needBlank = false;
       }
 
@@ -372,14 +388,16 @@ public class ConfigProcessor extends AbstractProcessor {
             methodBuilder.addStatement("$L.add(element)", listName);
         }
         methodBuilder.endControlFlow();
-        methodBuilder.addStatement("config.setProperty($S, $L)", key, listName);
+        methodBuilder.addStatement("config.setProperty($N + $S, $L)", prefixMemberName, key,
+            listName);
       } else {
         if (ab.parserClass().isPresent()) {
           // store the serialized string as the property
-          methodBuilder.addStatement("config.setProperty($S, $L.toString($N.$L()))", key,
-              parserName, ps, method.getSimpleName());
+          methodBuilder.addStatement("config.setProperty($N + $S, $L.toString($N.$L()))",
+              prefixMemberName, key, parserName, ps, method.getSimpleName());
         } else {
-          methodBuilder.addStatement("config.setProperty($S, t.$L())", key, method.getSimpleName());
+          methodBuilder.addStatement("config.setProperty($N + $S, t.$L())", prefixMemberName, key,
+              method.getSimpleName());
         }
       }
 
@@ -387,7 +405,8 @@ public class ConfigProcessor extends AbstractProcessor {
       if (ab.comment().length() > 0) {
         String commentName = String.format("%sComment", method.getSimpleName());
         methodBuilder.addStatement("$T $L = $S", String.class, commentName, ab.comment());
-        methodBuilder.addStatement("$N.setComment($S, $L)", layout, key, commentName);
+        methodBuilder.addStatement("$N.setComment($N + $S, $L)", layout, prefixMemberName, key,
+            commentName);
       }
     }
 
@@ -397,7 +416,7 @@ public class ConfigProcessor extends AbstractProcessor {
   }
 
   private MethodSpec buildGetTemplate(TypeVariableName tvn, Method m,
-      Map<ExecutableElement, AnnotationBundle> annotationsMap, String prefix) {
+      Map<ExecutableElement, AnnotationBundle> annotationsMap) {
 
     // this builds the getTemplate() method
     MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder(m.getName())
@@ -511,7 +530,8 @@ public class ConfigProcessor extends AbstractProcessor {
             ParameterizedTypeName.get(ClassName.get(java.util.ArrayList.class), argType);
         String listName = method.getSimpleName() + "List";
         builder.addStatement("$T " + listName + " = new $T()", listType, arrayListType);
-        builder.addStatement("String [] parts = config.getStringArray($S)", prefix + bundle.key());
+        builder.addStatement("String [] parts = config.getStringArray($N + $S)", prefix,
+            bundle.key());
         builder.beginControlFlow("for (String part : parts)");
         builder.beginControlFlow("if (part.trim().length() > 0)");
         if (bundle.parserClass().isPresent()) {
@@ -540,25 +560,25 @@ public class ConfigProcessor extends AbstractProcessor {
         builder.addStatement("return $L", listName);
       } else {
         if (bundle.parserClass().isPresent()) {
-          builder.addStatement("return $L.fromString(config.getString($S))", parserName,
-              prefix + bundle.key());
+          builder.addStatement("return $L.fromString(config.getString($N + $S))", parserName,
+              prefix, bundle.key());
         } else {
           if (ConfigProcessorUtils.isBoolean(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getBoolean($S)", prefix + bundle.key());
+            builder.addStatement("return config.getBoolean($N + $S)", prefix, bundle.key());
           } else if (ConfigProcessorUtils.isByte(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getByte($S)", prefix + bundle.key());
+            builder.addStatement("return config.getByte($N + $S)", prefix, bundle.key());
           } else if (ConfigProcessorUtils.isDouble(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getDouble($S)", prefix + bundle.key());
+            builder.addStatement("return config.getDouble($N + $S)", prefix, bundle.key());
           } else if (ConfigProcessorUtils.isFloat(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getFloat($S)", prefix + bundle.key());
+            builder.addStatement("return config.getFloat($N + $S)", prefix, bundle.key());
           } else if (ConfigProcessorUtils.isInteger(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getInt($S)", prefix + bundle.key());
+            builder.addStatement("return config.getInt($N + $S)", prefix, bundle.key());
           } else if (ConfigProcessorUtils.isLong(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getLong($S)", prefix + bundle.key());
+            builder.addStatement("return config.getLong($N + $S)", prefix, bundle.key());
           } else if (ConfigProcessorUtils.isShort(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getShort($S)", prefix + bundle.key());
+            builder.addStatement("return config.getShort($N + $S)", prefix, bundle.key());
           } else if (ConfigProcessorUtils.isString(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getString($S)", prefix + bundle.key());
+            builder.addStatement("return config.getString($N + $S)", prefix, bundle.key());
           } else {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                 "Can't handle return type " + m.getReturnType().getCanonicalName());

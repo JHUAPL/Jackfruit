@@ -134,14 +134,32 @@ The annotation processor generates a class called DemoInterfaceFactory.  An exam
 
 ## Inheritance
 
-Methods can be inherited by abstract classes.  The `@Jackfruit` annotation must be present on the parent class as well as the inherited class.  The annotation processor will build factory classes for both parent and child classes.
+Jackfruit annotations can be inherited by derived classes.  The `@Jackfruit` annotation must be present on the parent class as well as the inherited class.  The annotation processor will build factory classes for both parent and child classes.
 
 ## Supported Annotations
 
 The `@Jackfruit` annotation goes on the abstract type.  The remaining annotations are for use on methods.
 
 ### Jackfruit
-This annotation goes on the abstract type to signify that it should be run through the annotation processor.  There is an optional "prefix" argument that can be used to add a prefix to all of the configuration keys created by the processor.
+This annotation goes on the abstract type to signify that it should be run through the annotation processor.  There is an optional "prefix" argument that can be used to add a prefix to all of the configuration keys created by the processor.  The Jackfruit annotation is not inherited by derived classes.
+
+Every Factory class has a default constructor with this prefix (or an empty string if no prefix is specified) and a constructor where a prefix may be supplied.  This is useful in case the user wants to create many configurations with the same parameters but different prefixes.  The DemoInterface example above generates the following Factory code:
+```
+  private final String prefix;
+
+  public DemoInterfaceFactory() {
+    this.prefix = "prefix.";
+  }
+
+  public DemoInterfaceFactory(String prefix) {
+    if (prefix.length() > 0) prefix += ".";
+    this.prefix = prefix;
+  }
+  ```
+You can use the same set of parameters with a different prefix:
+```
+    DemoInterfaceFactory factory = new DemoInterfaceFactory("anotherPrefix");
+```
 
 ### Comment
 

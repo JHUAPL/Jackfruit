@@ -61,6 +61,15 @@ public class JackfruitDemo {
     List<SomeRandomClass> randoms = template.randoms();
     for (SomeRandomClass random : randoms)
       System.out.println("random.toUpperCase() = " + random.toUpperCase());
+
+    // create a new factory with a different prefix, but same parameters
+    factory = new DemoClassFactory("anotherPrefix");
+    template = factory.fromConfig(config);
+    
+    // this will not find anything
+    randoms = template.randoms();
+    for (SomeRandomClass random : randoms)
+      System.out.println("random.toUpperCase() = " + random.toUpperCase());
   }
 
 }
