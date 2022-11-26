@@ -143,20 +143,9 @@ The `@Jackfruit` annotation goes on the abstract type.  The remaining annotation
 ### Jackfruit
 This annotation goes on the abstract type to signify that it should be run through the annotation processor.  There is an optional "prefix" argument that can be used to add a prefix to all of the configuration keys created by the processor.  The Jackfruit annotation is not inherited by derived classes.
 
-Every Factory class has a default constructor with this prefix (or an empty string if no prefix is specified) and a constructor where a prefix may be supplied.  This is useful in case the user wants to create many configurations with the same parameters but different prefixes.  The DemoInterface example above generates the following Factory code:
-```
-  private final String prefix;
+Every Factory class has a default constructor with this prefix (or an empty string if no prefix is specified) and a constructor where a prefix may be supplied.  This is useful in case the user wants to create many configurations with the same parameters but different prefixes.  
 
-  public DemoInterfaceFactory() {
-    this.prefix = "prefix.";
-  }
-
-  public DemoInterfaceFactory(String prefix) {
-    if (prefix.length() > 0) prefix += ".";
-    this.prefix = prefix;
-  }
-  ```
-You can use the same set of parameters with a different prefix:
+To use the same set of parameters with a different prefix:
 ```
     DemoInterfaceFactory factory = new DemoInterfaceFactory("anotherPrefix");
 ```
@@ -184,3 +173,22 @@ public interface Parser<T> {
   public String toString(T t);
 }
 ```
+
+## Modifying a configuration
+
+If you'd like to create a configuration object that differs from the template populated with default values or one you've loaded from a file, the factory has "with" methods that will return a new PropertiesConfiguration object with a value replaced.  For example:
+
+```
+    DemoInterfaceFactory factory = new DemoInterfaceFactory();
+    DemoInterface template = factory.getTemplate();
+    PropertiesConfiguration config = factory.toConfig(template);
+    // add 999 to the default double values
+    List<Double> doubles = template.doubles();
+    doubles.add(999.);
+    config = factory.withDoubles(config, doubles);
+    config = factory.withIntMethod(config, 4);
+```
+
+This replaces the "doubles" and the "key" properties.  The "with" methods are just wrappers around the "setProperty" method of the PropertiesConfiguration class.
+
+

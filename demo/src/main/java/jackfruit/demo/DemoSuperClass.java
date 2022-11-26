@@ -6,7 +6,7 @@ import jackfruit.annotations.Jackfruit;
 import jackfruit.annotations.ParserClass;
 
 // prefix can be superseded by inherited classes
-@Jackfruit
+@Jackfruit(prefix = "super ")
 public abstract class DemoSuperClass extends DemoSuperSuperClass {
 
   @Comment("from DemoSuperClass")

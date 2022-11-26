@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -12,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Generated;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
@@ -34,6 +37,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.apache.commons.configuration2.Configuration;
 import com.google.auto.service.AutoService;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -42,6 +46,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
+import jackfruit.JackfruitVersion;
 import jackfruit.annotations.Comment;
 import jackfruit.annotations.DefaultValue;
 import jackfruit.annotations.Jackfruit;
@@ -94,8 +99,8 @@ public class ConfigProcessor extends AbstractProcessor {
           TypeElement annotatedType = (TypeElement) element;
 
           Jackfruit configParams = (Jackfruit) annotatedType.getAnnotation(Jackfruit.class);
-          String prefix = configParams.prefix();
-          if (prefix.length() > 0)
+          String prefix = configParams.prefix().strip();
+          if (prefix.length() > 0 && !prefix.endsWith("."))
             prefix += ".";
 
           // This is the templatized class with annotations to be processed (e.g.
@@ -109,8 +114,19 @@ public class ConfigProcessor extends AbstractProcessor {
           // This is the name of the class to create (e.g. ConfigTemplateFactory)
           String factoryName = String.format("%sFactory", annotatedType.getSimpleName());
 
-          TypeSpec.Builder classBuilder = TypeSpec.classBuilder(factoryName)
-              .addModifiers(Modifier.PUBLIC, Modifier.FINAL).addSuperinterface(ptn);
+          OffsetDateTime now = OffsetDateTime.now();
+          DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+
+          AnnotationSpec generated = AnnotationSpec.builder(Generated.class)
+              .addMember("value", String.format("\"%s\"", JackfruitVersion.packageName))
+              .addMember("date", String.format("\"%s\"", formatter.format(now)))
+              .addMember("comments", String.format("\"branch %s (%s)\"", JackfruitVersion.branch,
+                  JackfruitVersion.rev))
+              .build();
+
+          TypeSpec.Builder classBuilder =
+              TypeSpec.classBuilder(factoryName).addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+                  .addSuperinterface(ptn).addAnnotation(generated);
           /*-
           // logger for the generated class
           FieldSpec loggerField = FieldSpec.builder(org.apache.logging.log4j.Logger.class, "logger")
@@ -171,11 +187,15 @@ public class ConfigProcessor extends AbstractProcessor {
           classBuilder.addMethod(constructor);
 
           // add a constructor where caller can set prefix
-          constructor = MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
-              .addParameter(String.class, prefixMemberName)
-              .addStatement("if ($N.length() > 0) $N += $S", prefixMemberName, prefixMemberName,
-                  ".")
-              .addStatement("this.$N = $N", prefixMemberName, prefixMemberName).build();
+          constructor =
+              MethodSpec.constructorBuilder().addModifiers(Modifier.PUBLIC)
+                  .addParameter(String.class, prefixMemberName)
+                  .beginControlFlow("if ($N == null)", prefixMemberName)
+                  .addStatement("$N = \"\"", prefixMemberName).endControlFlow()
+                  .addStatement("$N = $N.strip()", prefixMemberName, prefixMemberName)
+                  .addStatement("if (!$N.endsWith(\".\")) $N += $S", prefixMemberName,
+                      prefixMemberName, ".")
+                  .addStatement("this.$N = $N", prefixMemberName, prefixMemberName).build();
           classBuilder.addMethod(constructor);
 
           // generate the methods from the interface
@@ -201,6 +221,9 @@ public class ConfigProcessor extends AbstractProcessor {
             }
 
           }
+
+          methods.addAll(buildWithMethods(tvn, annotationsMap, prefixMemberName));
+
           classBuilder.addMethods(methods);
           TypeSpec thisClass = classBuilder.build();
 
@@ -306,7 +329,7 @@ public class ConfigProcessor extends AbstractProcessor {
   }
 
   /**
-   * Build the method to generate an Apache Commons {@link Configuration}
+   * Build the method to generate an Apache Commons {@link Configuration} from an object
    * 
    * @param tvn
    * @param m
@@ -336,7 +359,7 @@ public class ConfigProcessor extends AbstractProcessor {
       AnnotationBundle ab = annotationsMap.get(method);
       String key = ab.key();
       if (needBlank) {
-        methodBuilder.addStatement("$N.setBlancLinesBefore($N + $S, 1)", layout, prefixMemberName,
+        methodBuilder.addStatement("$N.setBlankLinesBefore($N + $S, 1)", layout, prefixMemberName,
             key);
         needBlank = false;
       }
@@ -415,6 +438,14 @@ public class ConfigProcessor extends AbstractProcessor {
     return methodBuilder.build();
   }
 
+  /**
+   * Create a method that returns a template object, populated by the default values
+   * 
+   * @param tvn
+   * @param m
+   * @param annotationsMap
+   * @return
+   */
   private MethodSpec buildGetTemplate(TypeVariableName tvn, Method m,
       Map<ExecutableElement, AnnotationBundle> annotationsMap) {
 
@@ -500,6 +531,15 @@ public class ConfigProcessor extends AbstractProcessor {
     return methodBuilder.build();
   }
 
+  /**
+   * Create a method to create a configuration from the object
+   * 
+   * @param tvn
+   * @param m
+   * @param annotationsMap
+   * @param prefix
+   * @return
+   */
   private MethodSpec buildFromConfig(TypeVariableName tvn, Method m,
       Map<ExecutableElement, AnnotationBundle> annotationsMap, String prefix) {
 
@@ -590,6 +630,109 @@ public class ConfigProcessor extends AbstractProcessor {
     methodBuilder.addStatement("return $L", typeBuilder.build());
 
     return methodBuilder.build();
+  }
+
+  /**
+   * Create a method for each member that allows it to be replaced.
+   * 
+   * @param tvn
+   * @param annotationsMap
+   * @param prefixMemberName
+   * @return
+   */
+  private List<MethodSpec> buildWithMethods(TypeVariableName tvn,
+      Map<ExecutableElement, AnnotationBundle> annotationsMap, String prefixMemberName) {
+
+    List<MethodSpec> withMethods = new ArrayList<>();
+
+    ParameterSpec ps = ParameterSpec.builder(tvn, "t").build();
+
+    for (ExecutableElement method : annotationsMap.keySet()) {
+      String methodName = method.getSimpleName().toString();
+      String camelCase = String.format("with%s%s", methodName.substring(0, 1).toUpperCase(),
+          methodName.substring(1));
+      TypeName propertiesConfigurationClass =
+          TypeName.get(org.apache.commons.configuration2.PropertiesConfiguration.class);
+
+      // method with object passed in as an argument
+      MethodSpec.Builder builder = MethodSpec.methodBuilder(camelCase).addModifiers(Modifier.PUBLIC)
+          .returns(propertiesConfigurationClass);
+      builder.addJavadoc("Replace the value of " + methodName);
+      builder.addParameter(ps);
+      builder.addParameter(
+          ParameterSpec.builder(TypeName.get(method.getReturnType()), "replaceValue").build());
+      builder.addStatement("$T config = toConfig($N)", propertiesConfigurationClass, ps);
+      builder.addStatement(String.format("return %s(config, replaceValue)", camelCase));
+      withMethods.add(builder.build());
+
+      // method with PropertiesConfiguration passed in as an argument
+      builder = MethodSpec.methodBuilder(camelCase).addModifiers(Modifier.PUBLIC)
+          .returns(propertiesConfigurationClass);
+      builder.addJavadoc("Replace the value of " + methodName);
+      builder.addParameter(ParameterSpec.builder(propertiesConfigurationClass, "config").build());
+      builder.addParameter(
+          ParameterSpec.builder(TypeName.get(method.getReturnType()), "replaceValue").build());
+
+      AnnotationBundle ab = annotationsMap.get(method);
+      String key = ab.key();
+
+      TypeMirror parser = null;
+      String parserName = null;
+      if (ab.parserClass().isPresent()) {
+        parser = ab.parserClass().get();
+        parserName = method.getSimpleName() + "Parser";
+        builder.addStatement("$T " + parserName + " = new $T()", parser, parser);
+      }
+
+      if (ConfigProcessorUtils.isList(ab.erasure(), processingEnv)) {
+        // if it's a list, store a List<String> in the Apache configuration
+        TypeVariableName stringType = TypeVariableName.get(java.lang.String.class.getName());
+        ParameterizedTypeName listType =
+            ParameterizedTypeName.get(ClassName.get(java.util.List.class), stringType);
+        ParameterizedTypeName arrayListType =
+            ParameterizedTypeName.get(ClassName.get(java.util.ArrayList.class), stringType);
+        String listName = method.getSimpleName() + "List";
+        builder.addStatement("$T " + listName + " = new $T()", listType, arrayListType);
+        builder.beginControlFlow("for (var element : replaceValue)");
+        if (ab.parserClass().isPresent()) {
+          builder.addStatement("$L.add($L.toString(element))", listName, parserName);
+        } else {
+          TypeMirror typeArg = ab.typeArgs().get(0);
+          if (ConfigProcessorUtils.isByte(typeArg, processingEnv))
+            builder.addStatement("$L.add($T.toString(element))", listName, java.lang.Byte.class);
+          if (ConfigProcessorUtils.isBoolean(typeArg, processingEnv))
+            builder.addStatement("$L.add($T.toString(element))", listName, java.lang.Boolean.class);
+          if (ConfigProcessorUtils.isDouble(typeArg, processingEnv))
+            builder.addStatement("$L.add($T.toString(element))", listName, java.lang.Double.class);
+          if (ConfigProcessorUtils.isFloat(typeArg, processingEnv))
+            builder.addStatement("$L.add($T.toString(element))", listName, java.lang.Float.class);
+          if (ConfigProcessorUtils.isInteger(typeArg, processingEnv))
+            builder.addStatement("$L.add($T.toString(element))", listName, java.lang.Integer.class);
+          if (ConfigProcessorUtils.isLong(typeArg, processingEnv))
+            builder.addStatement("$L.add($T.toString(element))", listName, java.lang.Long.class);
+          if (ConfigProcessorUtils.isShort(typeArg, processingEnv))
+            builder.addStatement("$L.add($T.toString(element))", listName, java.lang.Short.class);
+          if (ConfigProcessorUtils.isString(typeArg, processingEnv))
+            builder.addStatement("$L.add(element)", listName);
+        }
+        builder.endControlFlow();
+        builder.addStatement("config.setProperty($N + $S, $L)", prefixMemberName, key, listName);
+      } else {
+        if (ab.parserClass().isPresent()) {
+          // store the serialized string as the property
+          builder.addStatement("config.setProperty($N + $S, $L.toString(replaceValue))",
+              prefixMemberName, key, parserName);
+        } else {
+          builder.addStatement("config.setProperty($N + $S, replaceValue)", prefixMemberName, key);
+        }
+      }
+
+      builder.addStatement("return config");
+
+      withMethods.add(builder.build());
+    }
+
+    return withMethods;
   }
 
 }

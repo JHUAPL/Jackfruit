@@ -6,6 +6,38 @@ import jackfruit.annotations.DefaultValue;
 import jackfruit.annotations.Jackfruit;
 import jackfruit.annotations.ParserClass;
 
+/**
+ * &#x0040;Jackfruit on abstract class
+ * <ul>
+ * <li>prefix is optional</li>
+ * </ul>
+ * Method annotations:
+ * <ul>
+ * <li>&#x0040;Key
+ * <ul>
+ * <li>If omitted value is method name</li>
+ * </ul>
+ * </li>
+ * <li>&#x0040;Comment
+ * <ul>
+ * <li>Optional</li>
+ * </ul>
+ * </li>
+ * <li>&#x0040;DefaultValue
+ * <ul>
+ * <li>Required, String value</li>
+ * </ul>
+ * </li>
+ * <li>&#x0040;Parser
+ * <ul>
+ * <li>Optional, name of class to create object from String using its fromString() method</li>
+ * </ul>
+ * <p>
+ * Inspired by <a href="http://owner.aeonbits.org/">owner</a>.
+ * 
+ * @author nairah1
+ *
+ */
 @Jackfruit(prefix = "prefix")
 public abstract class DemoClass extends DemoSuperClass {
 
