@@ -36,6 +36,11 @@ public class JackfruitDemo {
       System.out.println("*** This is the template, with default values ***");
       config.write(new PrintWriter(System.out));
 
+      // add 999 to the default double values
+      List<Double> doubles = template.doubles();
+      doubles.add(999.);
+      config = factory.withDoubles(config, doubles);
+
       // write to file
       File tmpFile = File.createTempFile("tmp", ".config");
       tmpFile.deleteOnExit();
@@ -43,6 +48,7 @@ public class JackfruitDemo {
       config.write(new PrintWriter(tmpFile));
 
       System.out.println("\n*** This is the configuration read from " + tmpFile.getAbsolutePath());
+      System.out.println("*** Note 999 has been added to doubles");
       // read from file
       config = new Configurations().properties(tmpFile);
 
@@ -65,8 +71,9 @@ public class JackfruitDemo {
     // create a new factory with a different prefix, but same parameters
     factory = new DemoClassFactory("anotherPrefix");
     template = factory.fromConfig(config);
-    
-    // this will not find anything
+
+    // this will not find anything, since template was created from the original config, which
+    // uses the original prefix.
     randoms = template.randoms();
     for (SomeRandomClass random : randoms)
       System.out.println("random.toUpperCase() = " + random.toUpperCase());

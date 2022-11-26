@@ -5,7 +5,7 @@ import jackfruit.annotations.DefaultValue;
 import jackfruit.annotations.Jackfruit;
 import jackfruit.annotations.Key;
 
-@Jackfruit
+@Jackfruit(prefix = "super.super.")
 public abstract class DemoSuperSuperClass {
 
   @Comment("from DemoSuperSuperClass")

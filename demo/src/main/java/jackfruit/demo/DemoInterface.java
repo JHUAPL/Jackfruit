@@ -8,7 +8,7 @@ import jackfruit.annotations.Key;
 import jackfruit.annotations.ParserClass;
 
 /**
- * &#x0040;Configurable on interface
+ * &#x0040;Jackfruit on interface
  * <ul>
  * <li>prefix is optional</li>
  * </ul>
