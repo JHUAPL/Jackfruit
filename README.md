@@ -189,6 +189,6 @@ If you'd like to create a configuration object that differs from the template po
     config = factory.withIntMethod(config, 4);
 ```
 
-This replaces the "doubles" and the "key" properties.  The "with" methods are just wrappers around the "setProperty" method of the PropertiesConfiguration class.
+This replaces the "doubles" and the "key" properties.  The "with" methods are just wrappers around the "setProperty" method of the PropertiesConfiguration class.  You can now use `fromConfig()` to create a new DemoInterface object with the updated values.
 
 

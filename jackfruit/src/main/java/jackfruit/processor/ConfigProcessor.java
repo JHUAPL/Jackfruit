@@ -120,7 +120,7 @@ public class ConfigProcessor extends AbstractProcessor {
           AnnotationSpec generated = AnnotationSpec.builder(Generated.class)
               .addMember("value", String.format("\"%s\"", JackfruitVersion.packageName))
               .addMember("date", String.format("\"%s\"", formatter.format(now)))
-              .addMember("comments", String.format("\"branch %s (%s)\"", JackfruitVersion.branch,
+              .addMember("comments", String.format("\"version %s-%s\"", JackfruitVersion.dateString,
                   JackfruitVersion.rev))
               .build();
 

@@ -4,7 +4,7 @@
 
 cd $(dirname $0)
 
-rev=$(git rev-parse --verify --short HEAD)
+rev=$(git rev-parse --verify --short=8 HEAD)
 if [ $? -gt 0 ]; then
     rev="UNKNOWN"
 fi
@@ -14,7 +14,9 @@ if [ $? -gt 0 ]; then
     branch="UNKNOWN"
 fi
 
-package=Jackfruit
+date=$(date -u +"%y.%m.%d")
+
+package=jackfruit
 srcFile="../java/jackfruit/JackfruitVersion.java"
 mkdir -p $(dirname $srcFile)
 
@@ -27,6 +29,7 @@ package jackfruit;
 public class JackfruitVersion {
     public final static String rev = new String("$rev");
     public final static String packageName = new String("$package");
+    public final static String dateString = new String("$date");
     public final static String branch = new String("$branch");
 }
 
