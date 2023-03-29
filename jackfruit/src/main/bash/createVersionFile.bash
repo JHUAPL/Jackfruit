@@ -5,17 +5,16 @@
 package=jackfruit
 srcFile="../java/jackfruit/JackfruitVersion.java"
 
-cd $(dirname "$0")
+cd "$(dirname "$0")"
 
 date=$(date -u +"%y.%m.%d")
 
-rev=$(git rev-parse --verify --short HEAD)
+rev=$(git rev-parse --verify --short=8 HEAD)
 if [ $? -gt 0 ]; then
     lastCommit=$(date -u +"%y.%m.%d")
     rev="UNVERSIONED"
 else
     lastCommit=$(git log -1 --format=%cd --date=format:%y.%m.%d)
-    rev=$(git rev-parse --verify --short HEAD)
 
     if [[ $(git diff --stat) != '' ]]; then
         if [[ $(git status -s | grep -v pom.xml | grep -v pom.bak | grep -v .m2 | grep -v $srcFile) != '' ]]; then
@@ -24,7 +23,7 @@ else
     fi
 fi
 
-mkdir -p $(dirname "$srcFile")
+mkdir -p "$(dirname "$srcFile")"
 
 touch $srcFile
 
