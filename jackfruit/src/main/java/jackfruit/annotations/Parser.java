@@ -8,7 +8,7 @@ package jackfruit.annotations;
  * @param <T>
  */
 public interface Parser<T> {
-  public T fromString(String s);
+  T fromString(String s);
 
-  public String toString(T t);
+  String toString(T t);
 }

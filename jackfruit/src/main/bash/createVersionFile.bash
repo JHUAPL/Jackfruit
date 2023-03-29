@@ -2,23 +2,29 @@
 
 # This script is run from maven.  See the exec-maven-plugin block in the pom.xml file.
 
-cd $(dirname $0)
+package=jackfruit
+srcFile="../java/jackfruit/JackfruitVersion.java"
 
-rev=$(git rev-parse --verify --short=8 HEAD)
-if [ $? -gt 0 ]; then
-    rev="UNKNOWN"
-fi
-
-branch=$(git symbolic-ref --short HEAD)
-if [ $? -gt 0 ]; then
-    branch="UNKNOWN"
-fi
+cd $(dirname "$0")
 
 date=$(date -u +"%y.%m.%d")
 
-package=jackfruit
-srcFile="../java/jackfruit/JackfruitVersion.java"
-mkdir -p $(dirname $srcFile)
+rev=$(git rev-parse --verify --short HEAD)
+if [ $? -gt 0 ]; then
+    lastCommit=$(date -u +"%y.%m.%d")
+    rev="UNVERSIONED"
+else
+    lastCommit=$(git log -1 --format=%cd --date=format:%y.%m.%d)
+    rev=$(git rev-parse --verify --short HEAD)
+
+    if [[ $(git diff --stat) != '' ]]; then
+        if [[ $(git status -s | grep -v pom.xml | grep -v pom.bak | grep -v .m2 | grep -v $srcFile) != '' ]]; then
+            rev=${rev}M
+        fi
+    fi
+fi
+
+mkdir -p $(dirname "$srcFile")
 
 touch $srcFile
 
@@ -27,10 +33,11 @@ cat <<EOF > $srcFile
 package jackfruit;
 
 public class JackfruitVersion {
-    public final static String rev = new String("$rev");
-    public final static String packageName = new String("$package");
-    public final static String dateString = new String("$date");
-    public final static String branch = new String("$branch");
+    public final static String lastCommit = "$lastCommit";
+    // an M at the end of gitRevision means this was built from a "dirty" git repository
+    public final static String rev = "$rev";
+    public final static String packageName = "$package";
+    public final static String dateString = "$date";
 }
 
 EOF

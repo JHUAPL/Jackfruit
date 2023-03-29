@@ -95,10 +95,9 @@ public class ConfigProcessor extends AbstractProcessor {
     for (Element element : annotatedElements) {
 
       try {
-        if (element instanceof TypeElement) {
-          TypeElement annotatedType = (TypeElement) element;
+        if (element instanceof TypeElement annotatedType) {
 
-          Jackfruit configParams = (Jackfruit) annotatedType.getAnnotation(Jackfruit.class);
+          Jackfruit configParams = annotatedType.getAnnotation(Jackfruit.class);
           String prefix = configParams.prefix().strip();
           if (prefix.length() > 0 && !prefix.endsWith("."))
             prefix += ".";
@@ -161,9 +160,9 @@ public class ConfigProcessor extends AbstractProcessor {
           Map<Name, AnnotationBundle> defaultAnnotationsMap = new LinkedHashMap<>();
           for (DeclaredType thisType : classHierarchy) {
             for (Element e : thisType.asElement().getEnclosedElements()) {
-              if (e.getKind() == ElementKind.METHOD && e.getAnnotation(DefaultValue.class) != null
-                  && e instanceof ExecutableElement) {
-                ExecutableElement ex = (ExecutableElement) e;
+              if (e.getKind() == ElementKind.METHOD
+                  && e.getAnnotation(DefaultValue.class) != null
+                  && e instanceof ExecutableElement ex) {
                 enclosedMethods.put(ex.getSimpleName(), ex);
                 AnnotationBundle defaultValues = defaultAnnotationsMap.get(ex.getSimpleName());
                 defaultAnnotationsMap.put(ex.getSimpleName(),
@@ -301,8 +300,7 @@ public class ConfigProcessor extends AbstractProcessor {
         builder.comment(((Comment) annotation).value());
       } else if (annotation instanceof DefaultValue) {
         builder.defaultValue(((DefaultValue) annotation).value());
-      } else if (annotation instanceof ParserClass) {
-        ParserClass pc = (ParserClass) annotation;
+      } else if (annotation instanceof ParserClass pc) {
 
         // this works, but there has to be a better way?
         TypeMirror tm;
@@ -334,7 +332,7 @@ public class ConfigProcessor extends AbstractProcessor {
    * @param tvn
    * @param m
    * @param annotationsMap
-   * @param prefix
+   * @param prefixMemberName
    * @return
    */
   private MethodSpec buildToConfig(TypeVariableName tvn, Method m,
@@ -554,6 +552,12 @@ public class ConfigProcessor extends AbstractProcessor {
           .addModifiers(Modifier.PUBLIC).addAnnotation(Override.class)
           .returns(TypeName.get(method.getReturnType())).addJavadoc(bundle.comment());
 
+      builder.addStatement("String key = $N + $S", prefix, bundle.key());
+      builder
+          .beginControlFlow("if (!config.containsKey(key))")
+          .addStatement("throw new $T($S + key)", RuntimeException.class, "No such key")
+          .endControlFlow();
+
       TypeMirror parser = null;
       String parserName = null;
       if (bundle.parserClass().isPresent()) {
@@ -570,8 +574,7 @@ public class ConfigProcessor extends AbstractProcessor {
             ParameterizedTypeName.get(ClassName.get(java.util.ArrayList.class), argType);
         String listName = method.getSimpleName() + "List";
         builder.addStatement("$T " + listName + " = new $T()", listType, arrayListType);
-        builder.addStatement("String [] parts = config.getStringArray($N + $S)", prefix,
-            bundle.key());
+        builder.addStatement("String [] parts = config.getStringArray(key)");
         builder.beginControlFlow("for (String part : parts)");
         builder.beginControlFlow("if (part.trim().length() > 0)");
         if (bundle.parserClass().isPresent()) {
@@ -600,25 +603,24 @@ public class ConfigProcessor extends AbstractProcessor {
         builder.addStatement("return $L", listName);
       } else {
         if (bundle.parserClass().isPresent()) {
-          builder.addStatement("return $L.fromString(config.getString($N + $S))", parserName,
-              prefix, bundle.key());
+          builder.addStatement("return $L.fromString(config.getString(key))", parserName);
         } else {
           if (ConfigProcessorUtils.isBoolean(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getBoolean($N + $S)", prefix, bundle.key());
+            builder.addStatement("return config.getBoolean(key)");
           } else if (ConfigProcessorUtils.isByte(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getByte($N + $S)", prefix, bundle.key());
+            builder.addStatement("return config.getByte(key)");
           } else if (ConfigProcessorUtils.isDouble(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getDouble($N + $S)", prefix, bundle.key());
+            builder.addStatement("return config.getDouble(key)");
           } else if (ConfigProcessorUtils.isFloat(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getFloat($N + $S)", prefix, bundle.key());
+            builder.addStatement("return config.getFloat(key)");
           } else if (ConfigProcessorUtils.isInteger(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getInt($N + $S)", prefix, bundle.key());
+            builder.addStatement("return config.getInt(key)");
           } else if (ConfigProcessorUtils.isLong(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getLong($N + $S)", prefix, bundle.key());
+            builder.addStatement("return config.getLong(key)");
           } else if (ConfigProcessorUtils.isShort(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getShort($N + $S)", prefix, bundle.key());
+            builder.addStatement("return config.getShort(key)");
           } else if (ConfigProcessorUtils.isString(bundle.erasure(), processingEnv)) {
-            builder.addStatement("return config.getString($N + $S)", prefix, bundle.key());
+            builder.addStatement("return config.getString(key)");
           } else {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
                 "Can't handle return type " + m.getReturnType().getCanonicalName());
