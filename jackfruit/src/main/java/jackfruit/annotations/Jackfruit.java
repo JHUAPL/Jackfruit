@@ -21,5 +21,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface Jackfruit {
-  public String prefix() default "";
+  String prefix() default "";
 }

@@ -2,7 +2,7 @@ package jackfruit.demo;
 
 public class SomeRandomClass {
 
-  private String internalString;
+  private final String internalString;
 
   public String getInternalString() {
     return internalString;
