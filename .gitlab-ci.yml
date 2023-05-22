@@ -56,8 +56,8 @@ maven document:
 maven deploy:
   stage: deploy
   script:
-    # --- set version to date+hash
-    - UPDATED_VERSION=$(date -u +"%y.%m.%d")-$CI_COMMIT_SHORT_SHA
+    # --- set version to last commit date+hash
+    - UPDATED_VERSION=$(git log -1 --format=%cd --date=format:%Y.%m.%d)-$CI_COMMIT_SHORT_SHA
     - echo updated deployment version to $UPDATED_VERSION
   
     # --- Set the update version in the pom file(s)
