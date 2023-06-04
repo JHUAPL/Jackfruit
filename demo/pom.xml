@@ -18,6 +18,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
+    <!-- skip site generation for demo package -->
     <maven-site-plugin.skip>true</maven-site-plugin.skip>
   </properties>
 
