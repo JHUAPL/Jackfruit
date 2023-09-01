@@ -3,16 +3,18 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>edu.jhuapl.ses.srn</groupId>
+
+  <groupId>edu.jhuapl.ses</groupId>
   <artifactId>jackfruit-parent</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
+  
   <name>jackfruit-parent</name>
 
   <inceptionYear>2023</inceptionYear>
   <organization>
     <name>Johns Hopkins University Applied Physics Laboratory</name>
-    <url>http://jhuapl.edu</url>
+    <url>https://www.jhuapl.edu/</url>
   </organization>
 
   <licenses>
@@ -50,7 +52,7 @@
        <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
     </repository>
   </distributionManagement>
-  
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>17</maven.compiler.source>
@@ -66,8 +68,8 @@
       <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
+
   <build>
 
     <pluginManagement>
@@ -204,6 +206,27 @@
                   <version>3.5.4</version>
                 </requireMavenVersion>
               </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.5</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+            <configuration>
+              <gpgArguments>
+                <arg>--pinentry-mode</arg>
+                <arg>loopback</arg>
+              </gpgArguments>
             </configuration>
           </execution>
         </executions>
