@@ -53,6 +53,7 @@ import java.util.List;
  *         <li>Optional, name of class to create object from String using its fromString() method
  *       </ul>
  *       <p>Inspired by <a href="http://owner.aeonbits.org/">owner</a>.
+ * </ul>
  *
  * @author Hari.Nair@jhuapl.edu
  */
