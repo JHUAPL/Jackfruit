@@ -84,6 +84,9 @@
 						</goals>
 						<configuration>
 							<executable>${project.basedir}/src/main/bash/createVersionFile.bash</executable>
+							<arguments>
+								<argument>${project.version}</argument>
+							</arguments>
 						</configuration>
 					</execution>
 				</executions>

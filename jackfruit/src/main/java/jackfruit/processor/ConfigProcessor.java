@@ -147,7 +147,7 @@ public class ConfigProcessor extends AbstractProcessor {
                   .addMember(
                       "comments",
                       String.format(
-                          "\"version %s-%s\"", JackfruitVersion.dateString, JackfruitVersion.rev))
+                          "\"version %s built %s\"", JackfruitVersion.version, JackfruitVersion.dateString))
                   .build();
 
           TypeSpec.Builder classBuilder =
