@@ -10,6 +10,8 @@
   <packaging>pom</packaging>
   
   <name>jackfruit-parent</name>
+	<description>Jackfruit processes annotations on Java interfaces and abstract classes to generate code that can read and write Apache Configuration files.</description>
+  <url>https://github.com/JHUAPL/Jackfruit</url>
 
   <inceptionYear>2023</inceptionYear>
   <organization>
@@ -171,6 +173,11 @@
           </execution>
         </executions>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+     </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

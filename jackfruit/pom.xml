@@ -13,7 +13,6 @@
 	<artifactId>jackfruit</artifactId>
 
 	<name>jackfruit</name>
-	<description>Java Annotations Configuration library</description>
 
 	<!-- Specifies organization -->
 	<organization>
