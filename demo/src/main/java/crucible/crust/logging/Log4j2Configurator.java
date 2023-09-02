@@ -9,9 +9,9 @@ package crucible.crust.logging;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,16 +37,16 @@ import org.apache.logging.log4j.core.layout.PatternLayout;
 
 /**
  * A simple configuration class.
- * <p>
- * Default settings:
- * <ul>
- * <li>Pattern is "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%c{1}:%L] %msg%n%throwable"<br>
- * (e.g. 2021-11-09 19:32:37.119 INFO [LoggingTest:25] Level INFO)</li>
- * <li>Log level is {@link Level#INFO}</li>
- * </ul>
- * 
- * @author nairah1
  *
+ * <p>Default settings:
+ *
+ * <ul>
+ *   <li>Pattern is "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%c{1}:%L] %msg%n%throwable"<br>
+ *       (e.g. 2021-11-09 19:32:37.119 INFO [LoggingTest:25] Level INFO)
+ *   <li>Log level is {@link Level#INFO}
+ * </ul>
+ *
+ * @author Hari.Nair@jhuapl.edu
  */
 public class Log4j2Configurator {
 
@@ -56,10 +56,9 @@ public class Log4j2Configurator {
   private static Log4j2Configurator instance = null;
 
   /**
-   * 
    * @return an instance of this singleton class.
    */
-  synchronized public static Log4j2Configurator getInstance() {
+  public static synchronized Log4j2Configurator getInstance() {
     if (instance == null) {
       instance = new Log4j2Configurator();
     }
@@ -69,15 +68,17 @@ public class Log4j2Configurator {
   private Log4j2Configurator() {
     final LoggerContext loggerContext = LoggerContext.getContext(false);
     final Configuration config = loggerContext.getConfiguration();
-    layout = PatternLayout.newBuilder().withPattern(DefaultConfiguration.DEFAULT_PATTERN)
-        .withConfiguration(config).build();
+    layout =
+        PatternLayout.newBuilder()
+            .withPattern(DefaultConfiguration.DEFAULT_PATTERN)
+            .withConfiguration(config)
+            .build();
     fileAppenders = new HashMap<>();
     setPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%c{1}:%L] %msg%n%throwable");
     setLevel(Level.INFO);
   }
 
   /**
-   * 
    * @return a map of logger names to {@link LoggerConfig}
    */
   private Map<String, LoggerConfig> getLoggerMap() {
@@ -85,22 +86,25 @@ public class Log4j2Configurator {
     final Configuration config = loggerContext.getConfiguration();
 
     Map<String, LoggerConfig> loggerMap = new HashMap<>(config.getLoggers());
-    loggerMap.put(LogManager.getRootLogger().getName(),
+    loggerMap.put(
+        LogManager.getRootLogger().getName(),
         config.getLoggerConfig(LogManager.getRootLogger().getName()));
     return Collections.unmodifiableMap(loggerMap);
   }
 
   /**
-   *
-   * 
    * @param filename Append log to named file, or create it if it doesn't exist.
    */
   public void addFile(String filename) {
     final LoggerContext loggerContext = LoggerContext.getContext(false);
     Map<String, LoggerConfig> loggerMap = getLoggerMap();
 
-    FileAppender appender = FileAppender.newBuilder().setName(filename).withFileName(filename)
-        .setLayout(layout).build();
+    FileAppender appender =
+        FileAppender.newBuilder()
+            .setName(filename)
+            .withFileName(filename)
+            .setLayout(layout)
+            .build();
     appender.start();
 
     for (String loggerName : loggerMap.keySet()) {
@@ -112,8 +116,6 @@ public class Log4j2Configurator {
   }
 
   /**
-   *
-   * 
    * @param filename Stop logging to named file.
    */
   public void removeFile(String filename) {
@@ -132,7 +134,6 @@ public class Log4j2Configurator {
   }
 
   /**
-   * 
    * @param pattern layout pattern for all {@link ConsoleAppender} and {@link FileAppender} objects.
    */
   public void setPattern(String pattern) {
@@ -152,11 +153,20 @@ public class Log4j2Configurator {
         // there should be a better way to do this - a toBuilder() method on the appender would be
         // really useful
         if (oldAppender instanceof ConsoleAppender) {
-          newAppender = ConsoleAppender.newBuilder().setName(appenderName).setConfiguration(config)
-              .setLayout(layout).build();
+          newAppender =
+              ConsoleAppender.newBuilder()
+                  .setName(appenderName)
+                  .setConfiguration(config)
+                  .setLayout(layout)
+                  .build();
         } else if (oldAppender instanceof FileAppender) {
-          newAppender = FileAppender.newBuilder().setName(appenderName).setConfiguration(config)
-              .withFileName(((FileAppender) oldAppender).getFileName()).setLayout(layout).build();
+          newAppender =
+              FileAppender.newBuilder()
+                  .setName(appenderName)
+                  .setConfiguration(config)
+                  .withFileName(((FileAppender) oldAppender).getFileName())
+                  .setLayout(layout)
+                  .build();
         }
         if (newAppender != null) {
           newAppender.start();
@@ -169,15 +179,15 @@ public class Log4j2Configurator {
   }
 
   /**
-   * Sets the levels of <code>parentLogger</code> and all 'child' loggers to the given
-   * <code>level</code>. This is simply a call to
-   * 
+   * Sets the levels of <code>parentLogger</code> and all 'child' loggers to the given <code>level
+   * </code>. This is simply a call to
+   *
    * <pre>
    * Configurator.setAllLevels(parentLogger, level)
    * </pre>
-   * 
-   * @param parentLogger
-   * @param level
+   *
+   * @param parentLogger name of parent logger
+   * @param level logging level
    */
   public void setLevel(String parentLogger, Level level) {
     Configurator.setAllLevels(parentLogger, level);
@@ -185,15 +195,14 @@ public class Log4j2Configurator {
 
   /**
    * Set all logger levels. This is simply a call to
-   * 
+   *
    * <pre>
    * setLevel(LogManager.getRootLogger().getName(), level)
    * </pre>
-   * 
-   * @param level
+   *
+   * @param level logging level
    */
   public void setLevel(Level level) {
     setLevel(LogManager.getRootLogger().getName(), level);
   }
-
 }

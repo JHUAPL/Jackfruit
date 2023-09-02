@@ -55,8 +55,8 @@ import jackfruit.annotations.ParserClass;
  * </ul>
  * <p>
  * Inspired by <a href="http://owner.aeonbits.org/">owner</a>.
- * 
- * @author nairah1
+ *
+ * @author Hari.Nair@jhuapl.edu
  *
  */
 
