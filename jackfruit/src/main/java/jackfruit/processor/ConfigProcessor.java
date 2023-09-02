@@ -123,7 +123,7 @@ public class ConfigProcessor extends AbstractProcessor {
 
           Jackfruit configParams = annotatedType.getAnnotation(Jackfruit.class);
           String prefix = configParams.prefix().strip();
-          if (prefix.length() > 0 && !prefix.endsWith(".")) prefix += ".";
+          if (!prefix.isEmpty() && !prefix.endsWith(".")) prefix += ".";
 
           // This is the templatized class with annotations to be processed (e.g.
           // ConfigTemplate)
@@ -317,7 +317,7 @@ public class ConfigProcessor extends AbstractProcessor {
               Diagnostic.Kind.ERROR,
               String.format(
                   "Unsupported kind %s for type %s!",
-                  erasure.getKind().toString(), erasure.toString()));
+                  erasure.getKind().toString(), erasure));
     }
 
     builder.addAllTypeArgs(typeArgs);
@@ -354,7 +354,7 @@ public class ConfigProcessor extends AbstractProcessor {
 
     AnnotationBundle bundle = builder.build();
     if (ConfigProcessorUtils.isList(bundle.erasure(), processingEnv)
-        && bundle.typeArgs().size() == 0)
+        && bundle.typeArgs().isEmpty())
       messager.printMessage(
           Diagnostic.Kind.ERROR,
           String.format("No parameter type for List on method %s!", e.getSimpleName()));
@@ -473,7 +473,7 @@ public class ConfigProcessor extends AbstractProcessor {
       }
 
       // add the comment
-      if (ab.comment().length() > 0) {
+      if (!ab.comment().isEmpty()) {
         String commentName = String.format("%sComment", method.getSimpleName());
         methodBuilder.addStatement("$T $L = $S", String.class, commentName, ab.comment());
         methodBuilder.addStatement(
@@ -570,7 +570,7 @@ public class ConfigProcessor extends AbstractProcessor {
           if (ConfigProcessorUtils.isString(bundle.erasure(), processingEnv)) {
             builder.addStatement("return $S", bundle.defaultValue());
           } else {
-            if (bundle.defaultValue().trim().length() == 0) {
+            if (bundle.defaultValue().trim().isEmpty()) {
               processingEnv
                   .getMessager()
                   .printMessage(
@@ -624,7 +624,7 @@ public class ConfigProcessor extends AbstractProcessor {
       builder.addStatement("String key = $N + $S", prefix, bundle.key());
       builder
           .beginControlFlow("if (!config.containsKey(key))")
-          .addStatement("throw new $T($S + key)", RuntimeException.class, "No such key")
+          .addStatement("throw new $T($S + key)", RuntimeException.class, "No such key ")
           .endControlFlow();
 
       TypeMirror parser = null;
