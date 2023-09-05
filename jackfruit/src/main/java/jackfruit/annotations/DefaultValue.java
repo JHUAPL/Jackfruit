@@ -32,8 +32,8 @@ import java.lang.annotation.Target;
  * Strings and primitives (and their corresponding wrapper types) are read natively. Other objects
  * will need to use the {@link ParserClass} annotation to specify a class which implements the
  * {@link Parser} interface to convert the object to and from a String.
- * 
- * @author nairah1
+ *
+ * @author Hari.Nair@jhuapl.edu
  *
  */
 @Retention(RetentionPolicy.SOURCE)

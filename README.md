@@ -10,14 +10,14 @@ Include Jackfruit in your project with the following POM:
 
 ```
 <dependency>
-    <groupId>edu.jhuapl.ses.srn</groupId>
+    <groupId>edu.jhuapl.ses</groupId>
     <artifactId>jackfruit</artifactId>
     <version>$VERSION</version>
     <type>pom</type>
 </dependency>
 ```
 
-Find the latest version at [Surfshop](http://surfshop:8082/ui/repos/tree/General/libs-snapshot-local/edu/jhuapl/ses/srn/jackfruit/).
+Find the latest version at [Maven Central](https://central.sonatype.com/).
 
 The annotation processor runs on any interface or abstract class annotated with `@Jackfruit`
 ```

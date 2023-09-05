@@ -9,9 +9,9 @@ package jackfruit.demo;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,6 +23,7 @@ package jackfruit.demo;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.PropertiesConfigurationLayout;
@@ -89,14 +90,21 @@ public class JackfruitDemo {
       System.out.println("random.toUpperCase() = " + random.toUpperCase());
 
     // create a new factory with a different prefix, but same parameters
+    System.out.println();
+    System.out.println(
+        "Create a config with anotherPrefix and retrieve randoms.  This will throw an exception.");
     factory = new DemoClassFactory("anotherPrefix");
     template = factory.fromConfig(config);
 
-    // this will not find anything, since template was created from the original config, which
-    // uses the original prefix.
-    randoms = template.randoms();
+    // this will throw an exception since anotherPrefix.randoms is not one of the keys in the
+    // configuration.
+    try {
+      randoms = template.randoms();
+    } catch (Exception e) {
+      System.out.println("Caught expected RuntimeException:\n" + e.getLocalizedMessage());
+      randoms = new ArrayList<>();
+    }
     for (SomeRandomClass random : randoms)
       System.out.println("random.toUpperCase() = " + random.toUpperCase());
   }
-
 }

@@ -39,9 +39,8 @@ import org.junit.Test;
 /**
  * From <a href=
  * "https://stackoverflow.com/questions/21427301/debugging-annotation-processors-in-eclipse">https://stackoverflow.com/questions/21427301/debugging-annotation-processors-in-eclipse</a>
- * 
- * @author nairah1
  *
+ * @author Hari.Nair@jhuapl.edu
  */
 public class TestProcessor {
 

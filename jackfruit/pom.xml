@@ -3,16 +3,16 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<parent>
 		<artifactId>jackfruit-parent</artifactId>
-		<groupId>edu.jhuapl.ses.srn</groupId>
+		<groupId>edu.jhuapl.ses</groupId>
 		<version>1.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>jackfruit</artifactId>
 
 	<name>jackfruit</name>
-	<description>Java Annotations Configuration library</description>
 
 	<!-- Specifies organization -->
 	<organization>
@@ -26,7 +26,7 @@
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 
-		<auto-service.version>1.1.0</auto-service.version>
+		<auto-service.version>1.1.1</auto-service.version>
 		<commons-configuration2.version>2.9.0</commons-configuration2.version>
 		<log4j-version>2.20.0</log4j-version>
 		<immutables.version>2.9.3</immutables.version>
@@ -84,6 +84,9 @@
 						</goals>
 						<configuration>
 							<executable>${project.basedir}/src/main/bash/createVersionFile.bash</executable>
+							<arguments>
+								<argument>${project.version}</argument>
+							</arguments>
 						</configuration>
 					</execution>
 				</executions>
