@@ -21,49 +21,20 @@ package jackfruit.processor;
  */
 
 import com.google.auto.service.AutoService;
-import com.squareup.javapoet.AnnotationSpec;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
-import com.squareup.javapoet.TypeVariableName;
+import com.squareup.javapoet.*;
 import jackfruit.JackfruitVersion;
-import jackfruit.annotations.Comment;
-import jackfruit.annotations.DefaultValue;
-import jackfruit.annotations.Jackfruit;
-import jackfruit.annotations.Key;
-import jackfruit.annotations.ParserClass;
+import jackfruit.annotations.*;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Generated;
-import javax.annotation.processing.Messager;
-import javax.annotation.processing.Processor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
+import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
@@ -101,6 +72,7 @@ public class ConfigProcessor extends AbstractProcessor {
     supportedMethodAnnotations = new ArrayList<>();
     supportedMethodAnnotations.add(Comment.class);
     supportedMethodAnnotations.add(DefaultValue.class);
+    supportedMethodAnnotations.add(Include.class);
     supportedMethodAnnotations.add(Key.class);
     supportedMethodAnnotations.add(ParserClass.class);
 
@@ -147,7 +119,8 @@ public class ConfigProcessor extends AbstractProcessor {
                   .addMember(
                       "comments",
                       String.format(
-                          "\"version %s built %s\"", JackfruitVersion.version, JackfruitVersion.dateString))
+                          "\"version %s built %s\"",
+                          JackfruitVersion.version, JackfruitVersion.dateString))
                   .build();
 
           TypeSpec.Builder classBuilder =
@@ -184,18 +157,28 @@ public class ConfigProcessor extends AbstractProcessor {
           Collections.reverse(classHierarchy);
           classHierarchy.add((DeclaredType) annotatedType.asType());
 
-          // create a list of methods annotated with DefaultValue - ignore everything else
+          // create a map of methods annotated with DefaultValue
           Map<Name, ExecutableElement> enclosedMethods = new LinkedHashMap<>();
+          // the default values for each method
           Map<Name, AnnotationBundle> defaultAnnotationsMap = new LinkedHashMap<>();
+          // Map of included config types
+          Map<Name, AnnotationBundle> includedMap = new LinkedHashMap<>();
           for (DeclaredType thisType : classHierarchy) {
             for (Element e : thisType.asElement().getEnclosedElements()) {
-              if (e.getKind() == ElementKind.METHOD
-                  && e.getAnnotation(DefaultValue.class) != null
-                  && e instanceof ExecutableElement ex) {
-                enclosedMethods.put(ex.getSimpleName(), ex);
-                AnnotationBundle defaultValues = defaultAnnotationsMap.get(ex.getSimpleName());
-                defaultAnnotationsMap.put(
-                    ex.getSimpleName(), buildAnnotationBundle(ex, defaultValues));
+              if (e.getKind() == ElementKind.METHOD && e instanceof ExecutableElement ex) {
+
+                if (ex.getAnnotation(Include.class) != null) {
+                  AnnotationBundle defaultValues = defaultAnnotationsMap.get(ex.getSimpleName());
+                  AnnotationBundle annotationBundle = buildAnnotationBundle(ex, defaultValues);
+                  includedMap.put(ex.getSimpleName(), annotationBundle);
+                }
+
+                if (ex.getAnnotation(DefaultValue.class) != null) {
+                  enclosedMethods.put(ex.getSimpleName(), ex);
+                  AnnotationBundle defaultValues = defaultAnnotationsMap.get(ex.getSimpleName());
+                  AnnotationBundle annotationBundle = buildAnnotationBundle(ex, defaultValues);
+                  defaultAnnotationsMap.put(ex.getSimpleName(), annotationBundle);
+                }
               }
             }
           }
@@ -239,17 +222,19 @@ public class ConfigProcessor extends AbstractProcessor {
             if (m.isDefault()) continue;
 
             if (m.getName().equals("toConfig")) {
-              MethodSpec toConfig = buildToConfig(tvn, m, annotationsMap, prefixMemberName);
+              MethodSpec toConfig =
+                  buildToConfig(tvn, m, annotationsMap, includedMap, prefixMemberName);
               methods.add(toConfig);
             }
 
             if (m.getName().equals("getTemplate")) {
-              MethodSpec getTemplate = buildGetTemplate(tvn, m, annotationsMap);
+              MethodSpec getTemplate = buildGetTemplate(tvn, m, annotationsMap, includedMap);
               methods.add(getTemplate);
             }
 
             if (m.getName().equals("fromConfig")) {
-              MethodSpec fromConfig = buildFromConfig(tvn, m, annotationsMap, prefixMemberName);
+              MethodSpec fromConfig =
+                  buildFromConfig(tvn, m, annotationsMap, includedMap, prefixMemberName);
               methods.add(fromConfig);
             }
           }
@@ -316,8 +301,8 @@ public class ConfigProcessor extends AbstractProcessor {
           .printMessage(
               Diagnostic.Kind.ERROR,
               String.format(
-                  "Unsupported kind %s for type %s!",
-                  erasure.getKind().toString(), erasure));
+                  "Element %s: Unsupported kind %s for type %s!",
+                  e, erasure.getKind().toString(), erasure));
     }
 
     builder.addAllTypeArgs(typeArgs);
@@ -334,6 +319,8 @@ public class ConfigProcessor extends AbstractProcessor {
         builder.comment(((Comment) annotation).value());
       } else if (annotation instanceof DefaultValue) {
         builder.defaultValue(((DefaultValue) annotation).value());
+      } else if (annotation instanceof Include) {
+        // do nothing
       } else if (annotation instanceof ParserClass pc) {
 
         // this works, but there has to be a better way?
@@ -353,8 +340,7 @@ public class ConfigProcessor extends AbstractProcessor {
     }
 
     AnnotationBundle bundle = builder.build();
-    if (ConfigProcessorUtils.isList(bundle.erasure(), processingEnv)
-        && bundle.typeArgs().isEmpty())
+    if (ConfigProcessorUtils.isList(bundle.erasure(), processingEnv) && bundle.typeArgs().isEmpty())
       messager.printMessage(
           Diagnostic.Kind.ERROR,
           String.format("No parameter type for List on method %s!", e.getSimpleName()));
@@ -374,6 +360,7 @@ public class ConfigProcessor extends AbstractProcessor {
       TypeVariableName tvn,
       Method m,
       Map<ExecutableElement, AnnotationBundle> annotationsMap,
+      Map<Name, AnnotationBundle> includedMap,
       String prefixMemberName) {
     ParameterSpec ps = ParameterSpec.builder(tvn, "t").build();
     ParameterSpec layout =
@@ -383,6 +370,7 @@ public class ConfigProcessor extends AbstractProcessor {
                         .getCanonicalName()),
                 "layout")
             .build();
+
     MethodSpec.Builder methodBuilder =
         MethodSpec.methodBuilder(m.getName())
             .addAnnotation(Override.class)
@@ -481,6 +469,15 @@ public class ConfigProcessor extends AbstractProcessor {
       }
     }
 
+    // add included classes
+    Types types = processingEnv.getTypeUtils();
+    for (Name name : includedMap.keySet()) {
+      AnnotationBundle bundle = includedMap.get(name);
+      String className = types.asElement(bundle.erasure()).getSimpleName().toString();
+      methodBuilder.addStatement(
+          "config.append(new $LFactory().toConfig(t.$L()))", className, name);
+    }
+
     methodBuilder.addCode("return config;");
 
     return methodBuilder.build();
@@ -495,7 +492,12 @@ public class ConfigProcessor extends AbstractProcessor {
    * @return
    */
   private MethodSpec buildGetTemplate(
-      TypeVariableName tvn, Method m, Map<ExecutableElement, AnnotationBundle> annotationsMap) {
+      TypeVariableName tvn,
+      Method m,
+      Map<ExecutableElement, AnnotationBundle> annotationsMap,
+      Map<Name, AnnotationBundle> includedMap) {
+
+    Types types = processingEnv.getTypeUtils();
 
     // this builds the getTemplate() method
     MethodSpec.Builder methodBuilder =
@@ -504,6 +506,23 @@ public class ConfigProcessor extends AbstractProcessor {
             .addModifiers(Modifier.PUBLIC)
             .returns(tvn);
     TypeSpec.Builder typeBuilder = TypeSpec.anonymousClassBuilder("").addSuperinterface(tvn);
+
+    for (Name name : includedMap.keySet()) {
+      AnnotationBundle bundle = includedMap.get(name);
+
+      MethodSpec.Builder builder =
+          MethodSpec.methodBuilder(name.toString())
+              .addModifiers(Modifier.PUBLIC)
+              .addAnnotation(Override.class)
+              .returns(TypeName.get(bundle.erasure()))
+              .addJavadoc(bundle.comment());
+
+      builder.addStatement(
+          "return new $LFactory().getTemplate()",
+          types.asElement(bundle.erasure()).getSimpleName());
+
+      typeBuilder.addMethod(builder.build());
+    }
 
     for (ExecutableElement method : annotationsMap.keySet()) {
       AnnotationBundle bundle = annotationsMap.get(method);
@@ -602,6 +621,7 @@ public class ConfigProcessor extends AbstractProcessor {
       TypeVariableName tvn,
       Method m,
       Map<ExecutableElement, AnnotationBundle> annotationsMap,
+      Map<Name, AnnotationBundle> includedMap,
       String prefix) {
 
     MethodSpec.Builder methodBuilder =
@@ -612,6 +632,25 @@ public class ConfigProcessor extends AbstractProcessor {
             .addParameter(org.apache.commons.configuration2.Configuration.class, "config");
 
     TypeSpec.Builder typeBuilder = TypeSpec.anonymousClassBuilder("").addSuperinterface(tvn);
+
+    Types types = processingEnv.getTypeUtils();
+    for (Name name : includedMap.keySet()) {
+      AnnotationBundle bundle = includedMap.get(name);
+
+      MethodSpec.Builder builder =
+          MethodSpec.methodBuilder(name.toString())
+              .addModifiers(Modifier.PUBLIC)
+              .addAnnotation(Override.class)
+              .returns(TypeName.get(bundle.erasure()))
+              .addJavadoc(bundle.comment());
+
+      builder.addStatement(
+          "return new $LFactory().fromConfig(config)",
+          types.asElement(bundle.erasure()).getSimpleName());
+
+      typeBuilder.addMethod(builder.build());
+    }
+
     for (ExecutableElement method : annotationsMap.keySet()) {
       AnnotationBundle bundle = annotationsMap.get(method);
       MethodSpec.Builder builder =

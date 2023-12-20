@@ -17,7 +17,7 @@ Include Jackfruit in your project with the following POM:
 </dependency>
 ```
 
-Find the latest version at [Maven Central](https://central.sonatype.com/).
+Find the latest version at [Maven Central](https://central.sonatype.com/artifact/edu.jhuapl.ses/jackfruit).
 
 The annotation processor runs on any interface or abstract class annotated with `@Jackfruit`
 ```
