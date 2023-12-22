@@ -65,7 +65,7 @@ public interface DemoInterface {
 }
 ```
 
-This corresponds to this Apache Configuration file:
+This corresponds to the following Apache Configuration file:
 ```
 # One line comment
 prefix.key = 1
@@ -138,7 +138,7 @@ Jackfruit annotations can be inherited by derived classes.  The `@Jackfruit` ann
 
 ## Supported Annotations
 
-The `@Jackfruit` annotation goes on the abstract type.  The remaining annotations are for use on methods.
+The `@Jackfruit` annotation goes on the abstract type.  The remaining annotations are for use on methods.  Jackfruit will only process methods annotated either with `@DefaultValue` or `@Include`.
 
 ### Jackfruit
 This annotation goes on the abstract type to signify that it should be run through the annotation processor.  There is an optional "prefix" argument that can be used to add a prefix to all of the configuration keys created by the processor.  The Jackfruit annotation is not inherited by derived classes.
@@ -156,7 +156,43 @@ The `@Comment` annotation specifies the comment that appears in the configuratio
 
 ### DefaultValue
 
-The `@DefaultValue` annotation is a String used to initialize the parameter.  This is a required annotation.  If it is absent no other annotations on this method will be processed.  Strings and primitives (and their corresponding wrapper types) are read natively.  Other objects will need to use the `@ParserClass` annotation to specify a class which implements the `jackfruit.annotations.Parser` interface to convert the object to and from a String.
+The `@DefaultValue` annotation is a String used to initialize the parameter.  Strings and primitives (and their corresponding wrapper types) are read natively.  Other objects will need to use the `@ParserClass` annotation to specify a class which implements the `jackfruit.annotations.Parser` interface to convert the object to and from a String.  This annotation must be present if `@Include` is not used.
+
+### Include
+
+The `@Include` annotation allows the user to include another configuration class within this one.  For example, if ThisBlock.java contains
+
+```
+@Jackfruit(prefix = "thisBlock")
+public interface ThisBlock {
+  @Comment("thisBlock")
+  @DefaultValue("1")
+  int intMethod();
+  
+@Include
+OtherBlock otherBlock();
+}
+```
+and OtherBlock.java contains
+```
+@Jackfruit(prefix = "otherBlock")
+public interface OtherBlock {
+  @Comment("OtherBlock")
+  @DefaultValue("2")
+  int intMethod();
+}
+
+```
+running new ThisBlockFactory().getTemplate() will create
+```
+# thisBlock
+thisBlock.intMethod = 1
+
+# OtherBlock
+otherBlock.intMethod = 2
+```
+
+If `@Include` is present, no other annotations will be honored.
 
 ### Key
 

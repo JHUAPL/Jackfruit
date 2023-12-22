@@ -171,9 +171,7 @@ public class ConfigProcessor extends AbstractProcessor {
                   AnnotationBundle defaultValues = defaultAnnotationsMap.get(ex.getSimpleName());
                   AnnotationBundle annotationBundle = buildAnnotationBundle(ex, defaultValues);
                   includedMap.put(ex.getSimpleName(), annotationBundle);
-                }
-
-                if (ex.getAnnotation(DefaultValue.class) != null) {
+                } else if (ex.getAnnotation(DefaultValue.class) != null) {
                   enclosedMethods.put(ex.getSimpleName(), ex);
                   AnnotationBundle defaultValues = defaultAnnotationsMap.get(ex.getSimpleName());
                   AnnotationBundle annotationBundle = buildAnnotationBundle(ex, defaultValues);
@@ -475,7 +473,7 @@ public class ConfigProcessor extends AbstractProcessor {
       AnnotationBundle bundle = includedMap.get(name);
       String className = types.asElement(bundle.erasure()).getSimpleName().toString();
       methodBuilder.addStatement(
-          "config.append(new $LFactory().toConfig(t.$L()))", className, name);
+          "config.append(new $LFactory().toConfig(t.$L(), layout))", className, name);
     }
 
     methodBuilder.addCode("return config;");
