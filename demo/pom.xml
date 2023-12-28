@@ -7,7 +7,7 @@
   <parent>
     <artifactId>jackfruit-parent</artifactId>
     <groupId>edu.jhuapl.ses</groupId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>jackfruit-demo</artifactId>
@@ -37,6 +37,8 @@
   </dependencies>
 
   <build>
+		<plugins>
+		</plugins>
   </build>
 
 </project>

@@ -20,10 +20,8 @@ package jackfruit.demo;
  * #L%
  */
 
-import jackfruit.annotations.Comment;
-import jackfruit.annotations.DefaultValue;
-import jackfruit.annotations.Jackfruit;
-import jackfruit.annotations.ParserClass;
+import jackfruit.annotations.*;
+
 import java.util.List;
 
 /**
@@ -97,6 +95,10 @@ public abstract class DemoClass extends DemoSuperClass {
       """)
   @ParserClass(SomeRandomClassParser.class)
   public abstract List<SomeRandomClass> randoms();
+
+  @Comment("Access another configuration block")
+  @Include
+  public abstract Included included();
 
   public void noAnnotationsOnThisMethod() {
     System.out.println("This method was not processed since it has no DefaultValue annotation");
