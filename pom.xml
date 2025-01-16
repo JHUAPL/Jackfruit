@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>edu.jhuapl.ses</groupId>
   <artifactId>jackfruit-parent</artifactId>
   <version>1.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  
+
   <name>jackfruit-parent</name>
-	<description>Jackfruit processes annotations on Java interfaces and abstract classes to generate code that can read and write Apache Configuration files.</description>
+  <description>Jackfruit processes annotations on Java interfaces and abstract classes to generate code that can read and write Apache Configuration files.</description>
   <url>https://github.com/JHUAPL/Jackfruit</url>
 
   <inceptionYear>2023</inceptionYear>
@@ -28,11 +27,11 @@
 
   <developers>
     <developer>
-       <id>HariNairJHUAPL</id>
-       <name>Hari Nair</name>
-       <email>Hari.Nair@jhuapl.edu</email>
-       <organization>JHUAPL</organization>
-       <organizationUrl>https://www.jhuapl.edu/</organizationUrl>
+      <id>HariNairJHUAPL</id>
+      <name>Hari Nair</name>
+      <email>Hari.Nair@jhuapl.edu</email>
+      <organization>JHUAPL</organization>
+      <organizationUrl>https://www.jhuapl.edu/</organizationUrl>
     </developer>
   </developers>
 
@@ -46,16 +45,15 @@
   <!-- publish to maven central -->
   <distributionManagement>
     <snapshotRepository>
-       <id>ossrh</id>
-       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
   </distributionManagement>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <!-- only do site generation for jackfruit package -->
+    <maven.compiler.release>17</maven.compiler.release>
+    <!-- only do site generation for jackfruit package, skip for demo -->
     <maven-site-plugin.skip>true</maven-site-plugin.skip>
   </properties>
 
@@ -89,6 +87,9 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>3.11.0</version>
           <configuration>
+            <compilerArgs>
+              <arg>-proc:full</arg>
+            </compilerArgs>
             <showWarnings>true</showWarnings>
           </configuration>
         </plugin>
@@ -109,19 +110,19 @@
           <version>3.1.1</version>
         </plugin>
 
-       <plugin>
+        <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.5.0</version>
           <executions>
-             <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                   <goal>jar</goal>
-                </goals>
-             </execution>
+            <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
           </executions>
-       </plugin>
+        </plugin>
 
         <!-- site lifecycle, see
         https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
@@ -177,7 +178,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-     </plugin>
+      </plugin>
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
