@@ -20,7 +20,6 @@ package jackfruit.processor;
  * #L%
  */
 
-import jackfruit.annotations.Parser;
 import java.util.List;
 import java.util.Optional;
 import javax.lang.model.type.TypeMirror;

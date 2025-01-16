@@ -43,6 +43,7 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import org.apache.commons.configuration2.Configuration;
+import org.apache.commons.configuration2.PropertiesConfigurationLayout;
 
 /**
  * Useful references for writing an annotation processor:
@@ -265,7 +266,7 @@ public class ConfigProcessor extends AbstractProcessor {
         }
       } catch (IOException e1) {
         messager.printMessage(Diagnostic.Kind.ERROR, e1.getLocalizedMessage());
-        e1.printStackTrace();
+        return false;
       }
     }
     return true;
@@ -274,7 +275,7 @@ public class ConfigProcessor extends AbstractProcessor {
   /**
    * @param e annotated method
    * @param defaultValues default values for annotations - could be from a parent class
-   * @return annotation values
+   * @return annotation values for this method
    */
   private AnnotationBundle buildAnnotationBundle(
       ExecutableElement e, AnnotationBundle defaultValues) {
@@ -301,9 +302,8 @@ public class ConfigProcessor extends AbstractProcessor {
       // these are the parameter types for a generic class
       List<? extends TypeMirror> args = ((DeclaredType) returnType).getTypeArguments();
       typeArgs.addAll(args);
-    } else if (erasure.getKind().isPrimitive()) {
-      // no type arguments here
-    } else {
+    } else if (!erasure.getKind().isPrimitive()) {
+      // There is a type argument here
       processingEnv
           .getMessager()
           .printMessage(
@@ -356,13 +356,15 @@ public class ConfigProcessor extends AbstractProcessor {
   }
 
   /**
-   * Build the method to generate an Apache Commons {@link Configuration} from an object
+   * Create the {@link ConfigFactory#toConfig(Object, PropertiesConfigurationLayout)} method.
    *
-   * @param tvn
-   * @param m
-   * @param annotationsMap
-   * @param prefixMemberName
-   * @return
+   * @param tvn the type variable name representing the generic type of the object being processed.
+   * @param m the method being processed.
+   * @param annotationsMap a map containing methods and associated metadata.
+   * @param includedMap a map containing classes to be added from an {@link Include} annotation.
+   * @param prefixMemberName a string representing the prefix when generating configuration keys.
+   * @return a {@link MethodSpec} instance representing the generated method for converting an
+   *     object to an Apache Commons {@link Configuration}.
    */
   private MethodSpec buildToConfig(
       TypeVariableName tvn,
@@ -403,7 +405,7 @@ public class ConfigProcessor extends AbstractProcessor {
         needBlank = false;
       }
 
-      TypeMirror parser = null;
+      TypeMirror parser;
       String parserName = null;
       if (ab.parserClass().isPresent()) {
         parser = ab.parserClass().get();
@@ -492,12 +494,12 @@ public class ConfigProcessor extends AbstractProcessor {
   }
 
   /**
-   * Create a method that returns a template object, populated by the default values
+   * Create the {@link ConfigFactory#getTemplate()} method.
    *
-   * @param tvn
-   * @param m
-   * @param annotationsMap
-   * @return
+   * @param tvn the type variable name representing the generic type of the object being processed.
+   * @param m the method being processed.
+   * @param annotationsMap a map containing methods and associated metadata.
+   * @return a {@link MethodSpec} that returns a template object, populated by the default values.
    */
   private MethodSpec buildGetTemplate(
       TypeVariableName tvn,
@@ -543,7 +545,7 @@ public class ConfigProcessor extends AbstractProcessor {
               .returns(TypeName.get(method.getReturnType()))
               .addJavadoc(bundle.comment());
 
-      TypeMirror parser = null;
+      TypeMirror parser;
       String parserName = null;
       if (bundle.parserClass().isPresent()) {
         parser = bundle.parserClass().get();
@@ -617,13 +619,14 @@ public class ConfigProcessor extends AbstractProcessor {
   }
 
   /**
-   * Create a method to create a configuration from the object
+   * Create the {@link ConfigFactory#fromConfig(Configuration)} method.
    *
-   * @param tvn
-   * @param m
-   * @param annotationsMap
-   * @param prefix
-   * @return
+   * @param tvn the type variable name representing the generic type of the object being processed.
+   * @param m the method being processed.
+   * @param annotationsMap a map containing methods and associated metadata.
+   * @param includedMap a map containing classes to be added from an {@link Include} annotation.
+   * @return a {@link MethodSpec} instance representing the generated method for converting an
+   *     Apache Commons {@link Configuration} to an object.
    */
   private MethodSpec buildFromConfig(
       TypeVariableName tvn,
@@ -674,7 +677,7 @@ public class ConfigProcessor extends AbstractProcessor {
           .addStatement("throw new $T($S + key)", RuntimeException.class, "No such key ")
           .endControlFlow();
 
-      TypeMirror parser = null;
+      TypeMirror parser;
       String parserName = null;
       if (bundle.parserClass().isPresent()) {
         parser = bundle.parserClass().get();
@@ -754,12 +757,12 @@ public class ConfigProcessor extends AbstractProcessor {
   }
 
   /**
-   * Create a method for each member that allows it to be replaced.
+   * Create the "with" methods of the factory class.
    *
-   * @param tvn
-   * @param annotationsMap
-   * @param prefixMemberName
-   * @return
+   * @param tvn the type variable name representing the generic type of the object being processed.
+   * @param annotationsMap a map containing methods and associated metadata.
+   * @param prefixMemberName a string representing the prefix when generating configuration keys.
+   * @return A list of methods that allow the user to change values.
    */
   private List<MethodSpec> buildWithMethods(
       TypeVariableName tvn,
@@ -804,7 +807,7 @@ public class ConfigProcessor extends AbstractProcessor {
       AnnotationBundle ab = annotationsMap.get(method);
       String key = ab.key();
 
-      TypeMirror parser = null;
+      TypeMirror parser;
       String parserName = null;
       if (ab.parserClass().isPresent()) {
         parser = ab.parserClass().get();
