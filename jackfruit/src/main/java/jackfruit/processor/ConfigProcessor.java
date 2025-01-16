@@ -58,10 +58,20 @@ import org.apache.commons.configuration2.Configuration;
  *
  * @author Hari.Nair@jhuapl.edu
  */
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
 @SupportedAnnotationTypes("jackfruit.annotations.Jackfruit")
 @AutoService(Processor.class)
 public class ConfigProcessor extends AbstractProcessor {
+
+  @Override
+  public synchronized void init(ProcessingEnvironment processingEnv) {
+    super.init(processingEnv);
+  }
+
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    // Dynamically return the latest version available
+    return SourceVersion.latest();
+  }
 
   private List<Class<? extends Annotation>> supportedMethodAnnotations;
   private Messager messager;
