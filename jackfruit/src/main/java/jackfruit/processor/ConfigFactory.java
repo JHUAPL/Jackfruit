@@ -34,18 +34,18 @@ import org.apache.commons.configuration2.PropertiesConfigurationLayout;
 public interface ConfigFactory<T> {
 
   /**
-   * @return This returns an object of type T with default values.
+   * @return an object of type T with default values.
    */
   T getTemplate();
 
   /**
-   * @param config configuration to turn into an object of type T
+   * @param config configuration to translate to an object of type T
    * @return an object of type T from the supplied Apache Commons {@link Configuration}.
    */
   T fromConfig(Configuration config);
 
   /**
-   * @param t object to convert to a configuration
+   * @param t object to translate to a configuration
    * @param layout used for formatting the returned PropertiesConfiguration
    * @return an Apache Commons {@link PropertiesConfiguration} from the supplied object T.
    */

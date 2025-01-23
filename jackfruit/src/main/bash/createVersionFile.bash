@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 
 version=$1
 
-date=$(date -u +"%y.%m.%d")
+date=$(date -u +"%Y-%b-%d %H:%M:%S %Z")
 
 mkdir -p "$(dirname "$srcFile")"
 
